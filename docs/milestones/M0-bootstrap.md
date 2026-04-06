@@ -45,26 +45,26 @@ Establish the project foundation: make key architecture decisions, set up the de
   - [x] Review and approve decision (2026-04-05)
 
 ### Project Setup (after ADRs approved)
-- [ ] Initialize Go module (`go mod init`)
-- [ ] Set up folder structure per ADR-001
-- [ ] Configure linting (golangci-lint)
-- [ ] Set up test framework
-- [ ] Create Makefile / Taskfile
-- [ ] Write first test (proof of life)
-- [ ] Set up CI (GitHub Actions)
+- [x] Initialize Go module (`go mod init github.com/tesserabox/bentotask`)
+- [x] Set up folder structure per ADR-001
+- [x] Configure linting (golangci-lint)
+- [x] Set up test framework
+- [x] Create Makefile / Taskfile
+- [x] Write first test (proof of life)
+- [x] Set up CI (GitHub Actions)
 - [x] Create .gitignore
-- [ ] Create CONTRIBUTING.md
+- [x] Create CONTRIBUTING.md
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] All three ADRs are written and approved
-- [ ] `go build ./cmd/bt` compiles successfully
-- [ ] `bt --version` prints version info
-- [ ] `bt --help` shows command structure
-- [ ] At least one passing test
-- [ ] CI runs on push
+- [x] All three ADRs are written and approved
+- [x] `go build ./cmd/bt` compiles successfully
+- [x] `bt --version` prints version info
+- [x] `bt --help` shows command structure
+- [x] At least one passing test
+- [x] CI runs on push
 
 ---
 

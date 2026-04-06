@@ -2,8 +2,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -46,8 +44,8 @@ func init() {
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("bt (BentoTask) %s\n", version)
+	Run: func(cmd *cobra.Command, _ []string) {
+		cmd.Printf("bt (BentoTask) %s\n", version)
 	},
 }
 

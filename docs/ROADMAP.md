@@ -22,9 +22,9 @@
 - [x] M0.3 — ADR-001: Choose programming language & tech stack (APPROVED: Go + SvelteKit)
 - [x] M0.4 — ADR-002: Choose storage format & indexing strategy (APPROVED: MD+YAML, file-per-task, SQLite index, ULID, RRULE)
 - [x] M0.5 — ADR-003: Choose CLI framework & UX patterns (APPROVED: noun-verb, Charm stack)
-- [ ] M0.6 — Set up project scaffolding (go mod, folder structure, CI)
-- [ ] M0.7 — Define coding standards & contribution guidelines
-- [ ] M0.8 — Set up testing framework & first test
+- [x] M0.6 — Set up project scaffolding (go mod, folder structure, CLI root command)
+- [x] M0.7 — Define coding standards & contribution guidelines
+- [x] M0.8 — Set up testing framework & first test
 
 ---
 

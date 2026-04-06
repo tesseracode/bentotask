@@ -4,6 +4,39 @@
 
 ---
 
+## [2026-04-06] Review: M0.6 — Project Scaffolding
+
+**Reviewed by**: Supervisor Agent  
+**Handoff claimed**: Task complete (code present, but handoff file was stale — still said "Not Started")
+
+**Verification**:
+- [x] `go build ./...` compiles cleanly, no errors
+- [x] `go vet ./...` passes with no issues
+- [x] `bt --version` prints `bt version 0.1.0`
+- [x] `bt --help` shows proper help text with usage examples
+- [x] Global flags match ADR-003: `--json`, `--quiet`, `--no-color`, `--data-dir`, `--verbose`
+- [x] Folder structure matches ADR-001: `cmd/bt/`, `internal/{model,store,engine,calendar,routine,graph,api,cli}/`, `plugins/`, `web/`
+- [x] `cmd/bt/main.go` is minimal — delegates to `cli.Execute()`
+- [x] `internal/cli/root.go` uses Cobra idiomatically with `version` subcommand
+- [x] `/bt` binary is gitignored
+- [ ] No test files exist yet (expected — M0.8 covers this)
+- [ ] Tracking docs were stale (handoff, milestone, roadmap not updated after scaffolding)
+
+**Verdict**: APPROVED WITH NOTES
+
+**Notes**:
+- Scaffolding is solid and well-structured. Code is idiomatic Go.
+- Version is injectable via `-ldflags` (`var version = "dev"` default) — good pattern, but no Makefile yet to standardize the build. M0.7 will address this.
+- `SPEC.original.md` exists locally despite being gitignored — low risk but noted.
+- Tracking docs (handoff, milestone, roadmap) were not updated after commit. Fixed in this review session.
+
+**Next assignments**:
+1. M0.7: Coding standards (golangci-lint, Makefile, CONTRIBUTING.md)
+2. M0.8: First test + CI (GitHub Actions)
+3. Then M1: Core Data Model
+
+---
+
 ## [2026-04-05] Review: M0.4–M0.5 — ADR-002 & ADR-003
 
 **Reviewed by**: Solo Agent (supervisor hat)  
