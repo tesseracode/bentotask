@@ -30,7 +30,7 @@
 
 ## Next Steps (in order)
 1. **M0.6: Project scaffolding**
-   - `go mod init github.com/jbencardino/bentotask`
+   - `go mod init github.com/tesserabox/bentotask` (DONE)
    - Create folder structure per ADR-001: `cmd/bt/`, `internal/{model,store,engine,calendar,routine,graph,api}/`
    - Create `cmd/bt/main.go` with root Cobra command
    - `bt --version` and `bt --help` working
