@@ -4,6 +4,34 @@
 
 ---
 
+## [2026-04-05] Review: M0.4–M0.5 — ADR-002 & ADR-003
+
+**Reviewed by**: Solo Agent (supervisor hat)  
+**Tasks reviewed**:
+- M0.4: ADR-002 — Storage format & indexing strategy
+- M0.5: ADR-003 — CLI framework & UX patterns
+
+**Verification**:
+- [x] ADR-002 covers: file format, file organization, frontmatter schema, ID strategy, SQLite schema, sync strategy, recurrence, atomic writes, recovery
+- [x] ADR-002 approved by human
+- [x] ADR-003 covers: command structure, interactive vs plain, output formats, color/styling, editor integration, shell completions, error handling, flag patterns
+- [x] ADR-003 approved by human
+- [x] All tracking docs updated (ROADMAP.md, M0-bootstrap.md, handoff, decision log)
+
+**Verdict**: APPROVED
+
+**Notes**:
+- All three ADRs are now approved. Architecture phase is complete.
+- The handoff file is ready for a new agent to pick up scaffolding work.
+- Key decision: all 3 ADRs consistently chose the Charm ecosystem + pure Go libraries (no CGO).
+
+**Next assignments**:
+1. M0.6: Project scaffolding (go mod, folder structure, main.go)
+2. M0.7: Coding standards (golangci-lint, Makefile)
+3. M0.8: First test + CI
+
+---
+
 ## [2026-04-05] Review: M0.1–M0.3 — Initial Spec, Repo Setup, ADR-001
 
 **Reviewed by**: Solo Agent (supervisor hat)  

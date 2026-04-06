@@ -20,8 +20,8 @@
 - [x] M0.1 — Write initial SPEC.md
 - [x] M0.2 — Initialize git repository
 - [x] M0.3 — ADR-001: Choose programming language & tech stack (APPROVED: Go + SvelteKit)
-- [ ] M0.4 — ADR-002: Choose storage format & indexing strategy
-- [ ] M0.5 — ADR-003: Choose CLI framework & UX patterns
+- [x] M0.4 — ADR-002: Choose storage format & indexing strategy (APPROVED: MD+YAML, file-per-task, SQLite index, ULID, RRULE)
+- [x] M0.5 — ADR-003: Choose CLI framework & UX patterns (APPROVED: noun-verb, Charm stack)
 - [ ] M0.6 — Set up project scaffolding (go mod, folder structure, CI)
 - [ ] M0.7 — Define coding standards & contribution guidelines
 - [ ] M0.8 — Set up testing framework & first test
@@ -155,5 +155,5 @@
 | ID | Date | Decision | Status |
 |----|------|----------|--------|
 | ADR-001 | 2026-04-05 | Tech stack: Go + SvelteKit | :white_check_mark: Approved |
-| ADR-002 | pending | Storage format & indexing | Not started |
-| ADR-003 | pending | CLI framework & UX | Not started |
+| ADR-002 | 2026-04-05 | Storage: MD+YAML, file-per-task, SQLite index, ULID, RRULE | :white_check_mark: Approved |
+| ADR-003 | 2026-04-05 | CLI: noun-verb, Charm stack, --json, $EDITOR, completions | :white_check_mark: Approved |

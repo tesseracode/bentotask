@@ -27,14 +27,22 @@ Establish the project foundation: make key architecture decisions, set up the de
 - [x] Create AGENTS.md (roles, handoff protocol, supervisor protocol)
 - [x] Set up handoff system (docs/handoff/)
 - [x] Set up supervisor system (docs/supervisor/)
-- [ ] **ADR-002**: Storage format & indexing strategy
-  - [ ] Finalize markdown + YAML frontmatter format
-  - [ ] Define SQLite schema for index
-  - [ ] Decide on file-per-task vs bundled files
-- [ ] **ADR-003**: CLI framework & UX patterns
-  - [ ] Command structure and naming conventions
-  - [ ] Output formatting (table, JSON, plain)
-  - [ ] Interactive mode decisions (bubbletea usage)
+- [x] **ADR-002**: Storage format & indexing strategy — **APPROVED**
+  - [x] Research Go libraries (frontmatter, SQLite, ULID, RRULE)
+  - [x] Finalize markdown + YAML frontmatter format
+  - [x] Define SQLite schema for index
+  - [x] Decide on file-per-task vs bundled files (file-per-task, ULID filenames)
+  - [x] Define index sync strategy (hybrid mtime + hash)
+  - [x] Write proposed decision
+  - [x] Review and approve decision (2026-04-05)
+- [x] **ADR-003**: CLI framework & UX patterns — **APPROVED**
+  - [x] Research CLI UX patterns (gh, kubectl, Taskwarrior, Charm ecosystem)
+  - [x] Command structure and naming conventions (noun-verb + aliases)
+  - [x] Output formatting (text, --json, --quiet)
+  - [x] Interactive mode decisions (bubbletea for sessions, huh for forms, plain for CRUD)
+  - [x] Color/styling, editor integration, shell completions, error handling
+  - [x] Write proposed decision
+  - [x] Review and approve decision (2026-04-05)
 
 ### Project Setup (after ADRs approved)
 - [ ] Initialize Go module (`go mod init`)
