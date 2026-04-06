@@ -27,7 +27,7 @@ lint:
 ## fmt: Format all Go files
 fmt:
 	$(GO) fmt ./...
-	goimports -w -local $(MODULE) .
+	@command -v goimports >/dev/null 2>&1 && goimports -w -local $(MODULE) . || echo "note: goimports not installed, skipping import sorting"
 
 ## clean: Remove build artifacts
 clean:

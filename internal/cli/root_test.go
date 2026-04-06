@@ -6,12 +6,19 @@ import (
 )
 
 func TestExecute(t *testing.T) {
-	// bt with no args should print help and exit successfully.
-	// Cobra prints help to stdout when no subcommand is given.
+	// Capture output so help text doesn't pollute test logs.
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetArgs([]string{})
+
 	err := Execute()
 	if err != nil {
 		t.Fatalf("Execute() returned error: %v", err)
 	}
+
+	// Reset for other tests
+	rootCmd.SetOut(nil)
+	rootCmd.SetArgs(nil)
 }
 
 func TestVersionCommand(t *testing.T) {

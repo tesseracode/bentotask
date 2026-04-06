@@ -4,6 +4,51 @@
 
 ---
 
+## [2026-04-06] Review: M0.7+M0.8 — Coding Standards, Tests & CI (M0 Completion)
+
+**Reviewed by**: Supervisor Agent  
+**Handoff claimed**: M0.7 and M0.8 complete; M0 milestone fully done
+
+**Verification — M0.7 (Coding Standards)**:
+- [x] `.golangci.yml` — v2 config with revive, gocritic, misspell, errcheck, staticcheck, unused, ineffassign, govet
+- [x] Formatters configured: gofmt + goimports with local prefix
+- [x] `golangci-lint run ./...` — **0 issues**
+- [x] `Makefile` — targets: build, test, lint, fmt, clean, help
+- [x] Build target uses `-ldflags` to inject version correctly
+- [x] `CONTRIBUTING.md` — covers dev setup, code style, project structure, testing, ADRs, commit conventions
+
+**Verification — M0.8 (First Test + CI)**:
+- [x] `internal/cli/root_test.go` — 3 tests: TestExecute, TestVersionCommand, TestRootHasGlobalFlags
+- [x] `make test` — **3/3 PASS**
+- [x] `.github/workflows/ci.yml` — test + lint jobs, triggers on push/PR to main
+- [x] CI uses `go-version-file: go.mod` (auto Go version) + `golangci-lint-action@v7`
+- [x] Code fix: `versionCmd` now uses `cmd.Printf` instead of `fmt.Printf` for testability
+
+**Verification — M0 Acceptance Criteria (ALL MET)**:
+- [x] All three ADRs written and approved (ADR-001, 002, 003)
+- [x] `go build ./cmd/bt` compiles successfully
+- [x] `bt --version` prints version info (`bt version dev`)
+- [x] `bt --help` shows command structure with usage examples
+- [x] At least one passing test (3 tests pass)
+- [x] CI runs on push (GitHub Actions configured)
+
+**Verdict**: **APPROVED** ✅
+
+**Notes**:
+- Clean, thorough work. All M0 acceptance criteria are met.
+- Good practice: used `cmd.Printf` over `fmt.Printf` in Cobra commands for testability — this shows awareness of idiomatic Cobra patterns.
+- The golangci-lint config is thoughtful — enables useful linters (revive, gocritic) without being overly strict for early development.
+- Makefile `fmt` target depends on `goimports` being installed — not a blocker since CI uses golangci-lint formatters, but the CONTRIBUTING.md could mention installing it.
+- Minor: `TestExecute` prints the full help text to stdout during test runs. Consider capturing output to keep test output clean. Non-blocking.
+- Worker agent updated all tracking docs correctly this time (learned from M0.6 feedback). Good improvement.
+
+**M0 Milestone: COMPLETE** 🎉
+
+**Next milestone**: M1 — Core Data Model
+**First task**: M1.1 — Implement task data model (struct + serialization)
+
+---
+
 ## [2026-04-06] Review: M0.6 — Project Scaffolding
 
 **Reviewed by**: Supervisor Agent  
