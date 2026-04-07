@@ -168,6 +168,64 @@ func (a *App) GetTask(idOrPrefix string) (*model.Task, string, error) {
 	}
 }
 
+// UpdateTask applies edits to a task, saves to disk, and re-indexes.
+// The apply function receives the task and can modify any fields.
+// Updated timestamp is set automatically.
+func (a *App) UpdateTask(idOrPrefix string, apply func(*model.Task)) (*model.Task, error) {
+	task, relPath, err := a.GetTask(idOrPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	apply(task)
+	task.Updated = time.Now().UTC()
+
+	if errs := task.Validate(); len(errs) > 0 {
+		return nil, fmt.Errorf("validation failed: %s", errs[0])
+	}
+
+	if err := a.saveTask(task, relPath); err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+// EditTaskFile returns the absolute path to a task's .md file.
+// Used by the CLI to open the file in $EDITOR.
+func (a *App) EditTaskFile(idOrPrefix string) (absPath string, err error) {
+	_, relPath, err := a.GetTask(idOrPrefix)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(a.DataDir, relPath), nil
+}
+
+// ReloadTask re-reads a task from disk and updates the index.
+// Called after $EDITOR closes to pick up any changes.
+func (a *App) ReloadTask(idOrPrefix string) (*model.Task, error) {
+	// We need to find the file path from the index first
+	task, relPath, err := a.GetTask(idOrPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	// Re-read from disk (editor may have changed it)
+	absPath := filepath.Join(a.DataDir, relPath)
+	updated, err := store.ParseFile(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("reload %s: %w", relPath, err)
+	}
+
+	// Re-index
+	if err := a.Index.UpsertTask(updated, relPath); err != nil {
+		return nil, fmt.Errorf("re-index %s: %w", relPath, err)
+	}
+
+	_ = task // silence unused warning in case original was needed
+	return updated, nil
+}
+
 // CompleteTask marks a task as done.
 func (a *App) CompleteTask(idOrPrefix string) (*model.Task, error) {
 	task, relPath, err := a.GetTask(idOrPrefix)

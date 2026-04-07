@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -19,6 +21,7 @@ func init() {
 	taskCmd.AddCommand(taskDoneCmd)
 	taskCmd.AddCommand(taskShowCmd)
 	taskCmd.AddCommand(taskDeleteCmd)
+	taskCmd.AddCommand(taskEditCmd)
 
 	rootCmd.AddCommand(taskCmd)
 
@@ -41,6 +44,19 @@ func init() {
 		cmd.Flags().StringP("context", "c", "", "Context: home, office, errands, anywhere")
 		cmd.Flags().StringP("box", "b", "", "Box/project path")
 	}
+
+	// bt task edit
+	taskEditCmd.Flags().String("title", "", "New title")
+	taskEditCmd.Flags().StringP("priority", "p", "", "Priority: none, low, medium, high, urgent")
+	taskEditCmd.Flags().StringP("energy", "e", "", "Energy: low, medium, high")
+	taskEditCmd.Flags().Int("duration", 0, "Estimated duration in minutes")
+	taskEditCmd.Flags().String("due", "", "Due date (YYYY-MM-DD)")
+	taskEditCmd.Flags().String("due-start", "", "Due window start (YYYY-MM-DD)")
+	taskEditCmd.Flags().String("due-end", "", "Due window end (YYYY-MM-DD)")
+	taskEditCmd.Flags().StringSlice("tag", nil, "Replace tags (repeatable)")
+	taskEditCmd.Flags().StringP("context", "c", "", "Context: home, office, errands, anywhere")
+	taskEditCmd.Flags().StringP("box", "b", "", "Box/project path")
+	taskEditCmd.Flags().StringP("status", "s", "", "Status: pending, active, paused, done, cancelled, waiting")
 
 	// bt task list / bt list
 	for _, cmd := range []*cobra.Command{taskListCmd, listCmd} {
@@ -312,6 +328,9 @@ var taskShowCmd = &cobra.Command{
 		cmd.Printf("File:     %s\n", relPath)
 		cmd.Printf("Created:  %s\n", task.Created.Format("2006-01-02 15:04"))
 		cmd.Printf("Updated:  %s\n", task.Updated.Format("2006-01-02 15:04"))
+		if task.CompletedAt != nil {
+			cmd.Printf("Done:     %s\n", task.CompletedAt.Format("2006-01-02 15:04"))
+		}
 
 		if task.Body != "" {
 			cmd.Printf("\n%s\n", task.Body)
@@ -319,6 +338,149 @@ var taskShowCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+// --- bt task edit ---
+
+var taskEditCmd = &cobra.Command{
+	Use:   "edit <id>",
+	Short: "Edit a task (via flags or $EDITOR)",
+	Long: `Edit a task. If flags are provided, applies them directly.
+If no flags are given, opens the task file in $EDITOR.
+
+Examples:
+  bt task edit 01JQX --title "New title"     Update title
+  bt task edit 01JQX -p high -s active       Update priority and status
+  bt task edit 01JQX --tag errands --tag home Replace tags
+  bt task edit 01JQX                         Open in $EDITOR`,
+	Args: cobra.ExactArgs(1),
+	RunE: runEdit,
+}
+
+func runEdit(cmd *cobra.Command, args []string) error {
+	a, err := openApp(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = a.Close() }()
+
+	idOrPrefix := args[0]
+
+	// Check if any edit flags were provided
+	hasFlags := cmd.Flags().Changed("title") ||
+		cmd.Flags().Changed("priority") ||
+		cmd.Flags().Changed("energy") ||
+		cmd.Flags().Changed("duration") ||
+		cmd.Flags().Changed("due") ||
+		cmd.Flags().Changed("due-start") ||
+		cmd.Flags().Changed("due-end") ||
+		cmd.Flags().Changed("tag") ||
+		cmd.Flags().Changed("context") ||
+		cmd.Flags().Changed("box") ||
+		cmd.Flags().Changed("status")
+
+	if hasFlags {
+		return editWithFlags(cmd, a, idOrPrefix)
+	}
+
+	return editWithEditor(cmd, a, idOrPrefix)
+}
+
+// editWithFlags applies flag-based edits directly.
+func editWithFlags(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
+	task, err := a.UpdateTask(idOrPrefix, func(t *model.Task) {
+		if v, _ := cmd.Flags().GetString("title"); cmd.Flags().Changed("title") {
+			t.Title = v
+		}
+		if v, _ := cmd.Flags().GetString("priority"); cmd.Flags().Changed("priority") {
+			t.Priority = model.Priority(v)
+		}
+		if v, _ := cmd.Flags().GetString("energy"); cmd.Flags().Changed("energy") {
+			t.Energy = model.Energy(v)
+		}
+		if v, _ := cmd.Flags().GetInt("duration"); cmd.Flags().Changed("duration") {
+			t.EstimatedDuration = v
+		}
+		if v, _ := cmd.Flags().GetString("due"); cmd.Flags().Changed("due") {
+			t.DueDate = v
+		}
+		if v, _ := cmd.Flags().GetString("due-start"); cmd.Flags().Changed("due-start") {
+			t.DueStart = v
+		}
+		if v, _ := cmd.Flags().GetString("due-end"); cmd.Flags().Changed("due-end") {
+			t.DueEnd = v
+		}
+		if v, _ := cmd.Flags().GetStringSlice("tag"); cmd.Flags().Changed("tag") {
+			t.Tags = v
+		}
+		if v, _ := cmd.Flags().GetString("context"); cmd.Flags().Changed("context") {
+			t.Context = []string{v}
+		}
+		if v, _ := cmd.Flags().GetString("box"); cmd.Flags().Changed("box") {
+			t.Box = v
+		}
+		if v, _ := cmd.Flags().GetString("status"); cmd.Flags().Changed("status") {
+			t.Status = model.Status(v)
+		}
+	})
+	if err != nil {
+		return err
+	}
+
+	quiet, _ := cmd.Flags().GetBool("quiet")
+	if quiet {
+		cmd.Println(task.ID)
+		return nil
+	}
+
+	cmd.Printf("✓ Updated: %s\n", task.Title)
+	return nil
+}
+
+// editWithEditor opens the task's .md file in $EDITOR.
+func editWithEditor(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
+	filePath, err := a.EditTaskFile(idOrPrefix)
+	if err != nil {
+		return err
+	}
+
+	editor := firstNonEmpty(os.Getenv("EDITOR"), os.Getenv("VISUAL"), "vi")
+
+	// Split editor command in case it has args (e.g., "code --wait")
+	parts := strings.Fields(editor)
+	editorCmd := exec.Command(parts[0], append(parts[1:], filePath)...)
+	editorCmd.Stdin = os.Stdin
+	editorCmd.Stdout = os.Stdout
+	editorCmd.Stderr = os.Stderr
+
+	if err := editorCmd.Run(); err != nil {
+		return fmt.Errorf("editor failed: %w", err)
+	}
+
+	// Reload the task from disk (editor may have changed it)
+	task, err := a.ReloadTask(idOrPrefix)
+	if err != nil {
+		return fmt.Errorf("reload after edit: %w", err)
+	}
+
+	quiet, _ := cmd.Flags().GetBool("quiet")
+	if quiet {
+		cmd.Println(task.ID)
+		return nil
+	}
+
+	cmd.Printf("✓ Updated: %s\n", task.Title)
+	return nil
+}
+
+// firstNonEmpty returns the first non-empty string, or the last argument as fallback.
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return values[len(values)-1]
 }
 
 // --- bt task delete ---

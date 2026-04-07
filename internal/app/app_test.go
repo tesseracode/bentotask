@@ -2,7 +2,11 @@ package app
 
 import (
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/tesserabox/bentotask/internal/model"
+	"github.com/tesserabox/bentotask/internal/store"
 )
 
 func openTestApp(t *testing.T) *App {
@@ -154,6 +158,93 @@ func TestCompleteTask(t *testing.T) {
 	reloaded, _, _ := a.GetTask(task.ID)
 	if reloaded.Status != "done" {
 		t.Errorf("persisted Status = %q, want %q", reloaded.Status, "done")
+	}
+}
+
+func TestUpdateTask(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Original", TaskOptions{Priority: "low"})
+
+	updated, err := a.UpdateTask(task.ID, func(tk *model.Task) {
+		tk.Title = "Modified"
+		tk.Priority = "high"
+		tk.Tags = []string{"updated"}
+	})
+	if err != nil {
+		t.Fatalf("UpdateTask() error: %v", err)
+	}
+	if updated.Title != "Modified" {
+		t.Errorf("Title = %q, want %q", updated.Title, "Modified")
+	}
+	if updated.Priority != "high" {
+		t.Errorf("Priority = %q, want %q", updated.Priority, "high")
+	}
+
+	// Verify persisted
+	reloaded, _, _ := a.GetTask(task.ID)
+	if reloaded.Title != "Modified" {
+		t.Errorf("persisted Title = %q, want %q", reloaded.Title, "Modified")
+	}
+	if len(reloaded.Tags) != 1 || reloaded.Tags[0] != "updated" {
+		t.Errorf("persisted Tags = %v, want [updated]", reloaded.Tags)
+	}
+}
+
+func TestUpdateTaskValidation(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Valid task", TaskOptions{})
+
+	_, err := a.UpdateTask(task.ID, func(tk *model.Task) {
+		tk.Title = "" // Invalid — title is required
+	})
+	if err == nil {
+		t.Error("UpdateTask with empty title should return validation error")
+	}
+
+	// Original should be unchanged
+	reloaded, _, _ := a.GetTask(task.ID)
+	if reloaded.Title != "Valid task" {
+		t.Errorf("Title should be unchanged after failed update, got %q", reloaded.Title)
+	}
+}
+
+func TestEditTaskFile(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Edit me", TaskOptions{})
+
+	path, err := a.EditTaskFile(task.ID)
+	if err != nil {
+		t.Fatalf("EditTaskFile() error: %v", err)
+	}
+	if path == "" {
+		t.Error("path should not be empty")
+	}
+	// Should be an absolute path ending in .md
+	if !strings.HasSuffix(path, ".md") {
+		t.Errorf("path should end with .md, got %q", path)
+	}
+}
+
+func TestReloadTask(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Before edit", TaskOptions{})
+
+	// Simulate an external edit by modifying the file directly
+	filePath, _ := a.EditTaskFile(task.ID)
+	updated := *task
+	updated.Title = "After edit"
+	_ = store.WriteFile(filePath, &updated)
+
+	reloaded, err := a.ReloadTask(task.ID)
+	if err != nil {
+		t.Fatalf("ReloadTask() error: %v", err)
+	}
+	if reloaded.Title != "After edit" {
+		t.Errorf("Title = %q, want %q", reloaded.Title, "After edit")
 	}
 }
 
