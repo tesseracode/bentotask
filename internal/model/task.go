@@ -101,8 +101,8 @@ type RoutineStep struct {
 
 // RoutineSchedule defines when a routine should be triggered.
 type RoutineSchedule struct {
-	Time string   `yaml:"time"` // Time of day (e.g., "07:00")
-	Days []string `yaml:"days"` // Days of week (e.g., ["mon","tue","wed"])
+	Time string   `yaml:"time,omitempty"` // Time of day (e.g., "07:00")
+	Days []string `yaml:"days,omitempty"` // Days of week (e.g., ["mon","tue","wed"])
 }
 
 // Task is the core data structure for BentoTask. It represents a task,

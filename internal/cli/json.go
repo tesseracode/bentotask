@@ -32,6 +32,24 @@ type TaskJSON struct {
 	Contexts          []string `json:"contexts"`
 	FilePath          string   `json:"file_path"`
 	Body              string   `json:"body,omitempty"`
+
+	// Routine-specific fields
+	Steps    []StepJSON    `json:"steps,omitempty"`
+	Schedule *ScheduleJSON `json:"schedule,omitempty"`
+}
+
+// StepJSON is the JSON representation of a routine step.
+type StepJSON struct {
+	Title    string `json:"title"`
+	Duration int    `json:"duration,omitempty"`
+	Ref      string `json:"ref,omitempty"`
+	Optional bool   `json:"optional,omitempty"`
+}
+
+// ScheduleJSON is the JSON representation of a routine schedule.
+type ScheduleJSON struct {
+	Time string   `json:"time,omitempty"`
+	Days []string `json:"days,omitempty"`
 }
 
 // taskToJSON converts a model.Task to its JSON representation.
@@ -58,6 +76,24 @@ func taskToJSON(task *model.Task, relPath string) TaskJSON {
 	}
 	if task.CompletedAt != nil {
 		j.CompletedAt = task.CompletedAt.UTC().Format(time.RFC3339)
+	}
+	// Routine-specific fields
+	if len(task.Steps) > 0 {
+		j.Steps = make([]StepJSON, len(task.Steps))
+		for i, s := range task.Steps {
+			j.Steps[i] = StepJSON{
+				Title:    s.Title,
+				Duration: s.Duration,
+				Ref:      s.Ref,
+				Optional: s.Optional,
+			}
+		}
+	}
+	if task.Schedule != nil {
+		j.Schedule = &ScheduleJSON{
+			Time: task.Schedule.Time,
+			Days: task.Schedule.Days,
+		}
 	}
 	// Ensure slices are never nil (produces [] instead of null in JSON)
 	if j.Tags == nil {

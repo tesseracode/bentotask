@@ -4,6 +4,110 @@
 
 ---
 
+## [2026-04-07] Review: M4 Group A — Routines (M4.1 + M4.2 + M4.3)
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `b516c5b` — M4.1+M4.2+M4.3: Implement routines — data model, CLI commands, play mode
+**Handoff claimed**: Group A complete (22 new tests, 184 total). Actual test count: 185.
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `go test ./...` — **185 tests PASS** (commit claims 184, off by 1 — cosmetic)
+- [x] Smoke: `bt routine create` — styled output with step count and total duration
+- [x] Smoke: `bt routine list` — table with ID, title, status, tags
+- [x] Smoke: `bt routine show <id>` — numbered steps, optional markers, durations, schedule
+- [x] Smoke: `bt routine create -q` — outputs ULID only
+- [x] Smoke: `bt routine play --json` — custom step listing with status, optional, estimated_duration
+- [x] Smoke: YAML frontmatter — steps serialize with title/duration/optional, schedule with time/days
+- [x] Smoke: error handling — no steps rejects, non-routine show/play rejects, exit code 1
+- [x] Tracking: ROADMAP M4.1–M4.3 checked ✅, M4.4–M4.7 unchecked
+- [x] Tracking: handoff updated to Group B, session 6 summary, package descriptions updated
+
+### M4.1: Routine Data Model — `internal/model/task.go` + `validate.go`
+
+- [x] `RoutineStep` expanded: `Title`, `Duration` (omitempty), `Ref` (omitempty), `Optional` (omitempty)
+- [x] Backward compatible — existing `ref`-only YAML still parses (Ref kept, just gets omitempty)
+- [x] Step validation: `step[i]: title or ref is required` for empty steps
+- [x] Existing validation intact: `routines require at least one step`
+- [x] 2 new model tests: title steps valid, step requires title or ref
+
+### M4.2: CLI Commands — `internal/cli/routines.go` (473 lines, new)
+
+- [x] `bt routine create` — `--step "Title:Duration?"` repeatable flag, `--schedule-time`, `--schedule-days`
+- [x] `bt routine list` — table view with ID, title, status, tags
+- [x] `bt routine show <id>` — detailed view with numbered steps, durations, optional markers, schedule
+- [x] All support `--json`, `--quiet`, aliases (`r`/`routines`)
+- [x] `completeRoutineIDs` — dynamic completion for routine-type tasks
+- [x] Flag completions for `--priority`, `--energy` on create
+- [x] `resetFlags()` updated to include routine commands (line 47)
+
+### M4.3: Play Mode — `runRoutinePlayInteractive` / `runRoutinePlayJSON`
+
+- [x] Interactive mode: step-by-step with Enter=done, s=skip (optional only)
+- [x] Elapsed time per step and total routine tracked
+- [x] EOF/error on stdin breaks loop gracefully (remaining steps skipped)
+- [x] JSON mode: outputs step listing with step number, title, status, optional, estimated_duration — no interactive execution
+- [x] Play mode custom struct separate from `TaskJSON` — correct approach
+
+### App Layer — `internal/app/app.go` (69 new lines)
+
+- [x] `AddRoutine(title, opts)` — creates task with type=routine, status=active, auto-computed EstimatedDuration
+- [x] `ListRoutines()` — delegates to `Index.ListTasks` with type=routine filter
+- [x] `RoutineOptions` struct: Steps, Schedule, Priority, Energy, Tags
+- [x] Validation via `task.Validate()` before write — catches empty steps, empty title+ref
+- [x] 5 app tests: create, schedule, no steps, optional steps, list (filters out non-routines)
+
+### Step Flag Parsing — `parseStepFlags` (39 lines)
+
+- [x] `"Title:Duration"` → splits on last colon, Atoi for duration
+- [x] `"Title"` → no colon → duration=0 (untimed)
+- [x] `"Title:Duration?"` → `?` suffix parsed first as optional, then title:duration
+- [x] `"Read: chapter 3"` → colon not followed by valid number → entire string is title
+- [x] 5 unit tests: basic, no duration, optional, empty, colon in title
+
+### Issues Found
+
+**🔴 Bug: `TaskJSON` missing Steps and Schedule fields**
+
+`bt routine show --json` and `bt routine create --json` output JSON via `taskToJSON()` which uses the `TaskJSON` struct. This struct has no `Steps` or `Schedule` fields — routine-specific data is silently dropped from JSON output.
+
+The play mode JSON works correctly because it uses a custom inline struct. But the standard `--json` output for create/show loses critical routine information.
+
+**Severity**: Medium. JSON consumers (scripts, integrations) can't see routine steps or schedule.
+**Fix**: Add `Steps []StepJSON` and `Schedule *ScheduleJSON` fields to `TaskJSON`, populate in `taskToJSON()`.
+
+**⚠️ Minor: `schedule.days: []` when only `--schedule-time` provided**
+
+When creating a routine with `--schedule-time 07:00` but no `--schedule-days`, the YAML gets `days: []` instead of omitting days entirely. Not a bug, but could be cleaner with `omitempty` on the Days field in `RoutineSchedule`.
+
+**⚠️ Note: `store → habit` dependency (tracked from previous review)**
+
+No new cross-package dependency issues in this commit. The `store → habit` dependency from the RebuildIndex fix remains the only non-standard dependency direction. Worth refactoring if `habit` ever needs to import `store`.
+
+### Integration Tests — 10 new
+
+- [x] `TestIntegrationRoutineCreateAndList` — create + list lifecycle
+- [x] `TestIntegrationRoutineCreateJSON` — JSON with type, status, estimated_duration
+- [x] `TestIntegrationRoutineCreateQuiet` — quiet mode outputs ULID
+- [x] `TestIntegrationRoutineShow` — show with numbered steps
+- [x] `TestIntegrationRoutineShowJSON` — JSON output
+- [x] `TestIntegrationRoutinePlayJSON` — play JSON with step details
+- [x] `TestIntegrationRoutineListEmpty` — empty list hint message
+- [x] `TestIntegrationRoutineCreateNoSteps` — error on no steps
+- [x] `TestIntegrationRoutineShowNonRoutine` — error on non-routine
+- [x] `TestIntegrationRoutineCreateWithSchedule` — schedule creation
+- [x] `TestIntegrationRoutineAlias` — `bt r create` works
+
+(11 integration tests counted, not 10 — agent miscounted)
+
+**Verdict**: **APPROVED WITH NOTES** ✅
+
+Group A routines are solid — clean model expansion, good CLI UX, interactive play mode works well. The `TaskJSON` missing steps/schedule is the one real issue that should be fixed before Group B, since linking will add more fields to JSON output and it's better to fix the pattern now.
+
+---
+
 ## [2026-04-07] Review: Bug Fix — cmd.Println stderr + RebuildIndex habit completions
 
 **Reviewed by**: Supervisor Agent

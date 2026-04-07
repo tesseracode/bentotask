@@ -924,6 +924,16 @@ func TestIntegrationRoutineCreateJSON(t *testing.T) {
 	if result.EstimatedDuration != 40 {
 		t.Errorf("JSON estimated_duration = %d, want 40", result.EstimatedDuration)
 	}
+	// Verify steps are included in JSON output
+	if len(result.Steps) != 2 {
+		t.Fatalf("JSON steps count = %d, want 2", len(result.Steps))
+	}
+	if result.Steps[0].Title != "Journal" || result.Steps[0].Duration != 10 {
+		t.Errorf("JSON steps[0] = %+v, want Journal:10", result.Steps[0])
+	}
+	if result.Steps[1].Title != "Read" || result.Steps[1].Duration != 30 {
+		t.Errorf("JSON steps[1] = %+v, want Read:30", result.Steps[1])
+	}
 }
 
 func TestIntegrationRoutineCreateQuiet(t *testing.T) {
@@ -986,6 +996,13 @@ func TestIntegrationRoutineShowJSON(t *testing.T) {
 	}
 	if result.Title != "JSON Show" {
 		t.Errorf("JSON title = %q, want %q", result.Title, "JSON Show")
+	}
+	// Verify steps are included in show --json output
+	if len(result.Steps) != 1 {
+		t.Fatalf("JSON steps count = %d, want 1", len(result.Steps))
+	}
+	if result.Steps[0].Title != "Step" || result.Steps[0].Duration != 5 {
+		t.Errorf("JSON steps[0] = %+v, want Step:5", result.Steps[0])
 	}
 }
 
@@ -1068,6 +1085,16 @@ func TestIntegrationRoutineCreateWithSchedule(t *testing.T) {
 	}
 	if result.Type != "routine" {
 		t.Errorf("type = %q, want routine", result.Type)
+	}
+	// Verify schedule is included in JSON output
+	if result.Schedule == nil {
+		t.Fatal("JSON schedule should not be nil")
+	}
+	if result.Schedule.Time != "07:00" {
+		t.Errorf("JSON schedule.time = %q, want 07:00", result.Schedule.Time)
+	}
+	if len(result.Schedule.Days) != 3 {
+		t.Errorf("JSON schedule.days = %v, want [mon wed fri]", result.Schedule.Days)
 	}
 }
 
