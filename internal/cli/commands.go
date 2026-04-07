@@ -70,6 +70,9 @@ func init() {
 		cmd.Flags().StringP("context", "c", "", "Filter by context")
 		cmd.Flags().IntP("limit", "n", 0, "Limit number of results")
 	}
+
+	// Dynamic shell completions (ADR-003 §6)
+	registerCompletions()
 }
 
 // taskCmd is the parent command: `bt task <subcommand>`.
@@ -139,6 +142,14 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if isJSON(cmd) {
+		relPath := "inbox/" + task.ID + ".md"
+		if opts.Box != "" {
+			relPath = opts.Box + "/" + task.ID + ".md"
+		}
+		return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
+	}
+
 	quiet, _ := cmd.Flags().GetBool("quiet")
 	if quiet {
 		cmd.Println(task.ID)
@@ -197,6 +208,14 @@ func runList(cmd *cobra.Command, _ []string) error {
 	tasks, err := a.ListTasks(f)
 	if err != nil {
 		return err
+	}
+
+	if isJSON(cmd) {
+		items := make([]TaskJSON, len(tasks))
+		for i, t := range tasks {
+			items[i] = indexedToJSON(t)
+		}
+		return writeJSON(cmd.OutOrStdout(), items)
 	}
 
 	quiet, _ := cmd.Flags().GetBool("quiet")
@@ -286,6 +305,11 @@ func runDone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if isJSON(cmd) {
+		_, relPath, _ := a.GetTask(task.ID)
+		return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
+	}
+
 	quiet, _ := cmd.Flags().GetBool("quiet")
 	if quiet {
 		cmd.Println(task.ID)
@@ -312,6 +336,10 @@ var taskShowCmd = &cobra.Command{
 		task, relPath, err := a.GetTask(args[0])
 		if err != nil {
 			return err
+		}
+
+		if isJSON(cmd) {
+			return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
 		}
 
 		cmd.Printf("ID:       %s\n", style.Dim(task.ID))
@@ -448,6 +476,11 @@ func editWithFlags(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
 		return err
 	}
 
+	if isJSON(cmd) {
+		_, relPath, _ := a.GetTask(task.ID)
+		return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
+	}
+
 	quiet, _ := cmd.Flags().GetBool("quiet")
 	if quiet {
 		cmd.Println(task.ID)
@@ -482,6 +515,11 @@ func editWithEditor(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
 	task, err := a.ReloadTask(idOrPrefix)
 	if err != nil {
 		return fmt.Errorf("reload after edit: %w", err)
+	}
+
+	if isJSON(cmd) {
+		_, relPath, _ := a.GetTask(task.ID)
+		return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
 	}
 
 	quiet, _ := cmd.Flags().GetBool("quiet")
@@ -522,6 +560,10 @@ var taskDeleteCmd = &cobra.Command{
 			return err
 		}
 
+		if isJSON(cmd) {
+			return writeJSON(cmd.OutOrStdout(), taskToJSON(task, ""))
+		}
+
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		if quiet {
 			cmd.Println(task.ID)
@@ -560,6 +602,10 @@ var indexRebuildCmd = &cobra.Command{
 			return err
 		}
 
+		if isJSON(cmd) {
+			return writeJSON(cmd.OutOrStdout(), map[string]int{"indexed": count})
+		}
+
 		cmd.Printf("%s %d tasks indexed\n", style.Success("Rebuilt index:"), count)
 		return nil
 	},
@@ -588,6 +634,14 @@ Examples:
 		tasks, err := a.SearchTasks(query)
 		if err != nil {
 			return err
+		}
+
+		if isJSON(cmd) {
+			items := make([]TaskJSON, len(tasks))
+			for i, t := range tasks {
+				items[i] = indexedToJSON(t)
+			}
+			return writeJSON(cmd.OutOrStdout(), items)
 		}
 
 		quiet, _ := cmd.Flags().GetBool("quiet")
@@ -650,4 +704,10 @@ func openApp(cmd *cobra.Command) (*app.App, error) {
 	}
 
 	return app.Open(dataDir)
+}
+
+// isJSON returns true if the --json flag is set.
+func isJSON(cmd *cobra.Command) bool {
+	v, _ := cmd.Flags().GetBool("json")
+	return v
 }

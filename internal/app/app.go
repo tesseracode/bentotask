@@ -277,6 +277,37 @@ func (a *App) RebuildIndex() (int, error) {
 	return a.Index.RebuildIndex(a.DataDir)
 }
 
+// CompleteTasks returns task ID+title pairs for shell completion.
+// Only returns non-done tasks for a better completion experience.
+func (a *App) CompleteTasks() ([]string, error) {
+	tasks, err := a.Index.ListTasks(nil)
+	if err != nil {
+		return nil, err
+	}
+	var comps []string
+	for _, t := range tasks {
+		if t.Status != "done" && t.Status != "cancelled" {
+			comps = append(comps, t.ID+"\t"+t.Title)
+		}
+	}
+	return comps, nil
+}
+
+// CompleteTags returns all distinct tags for shell completion.
+func (a *App) CompleteTags() ([]string, error) {
+	return a.Index.DistinctTags()
+}
+
+// CompleteBoxes returns all distinct boxes for shell completion.
+func (a *App) CompleteBoxes() ([]string, error) {
+	return a.Index.DistinctBoxes()
+}
+
+// CompleteContexts returns all distinct contexts for shell completion.
+func (a *App) CompleteContexts() ([]string, error) {
+	return a.Index.DistinctContexts()
+}
+
 // --- Helpers ---
 
 // loadTask reads the full task from disk given an indexed reference.

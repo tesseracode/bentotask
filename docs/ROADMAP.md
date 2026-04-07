@@ -52,9 +52,9 @@
 - [x] M2.7 — `bt show <id>` — display task details
 - [x] M2.8 — Tags, priority, energy level support
 - [x] M2.9 — Search and filtering (by tag, priority, status, box)
-- [ ] M2.10 — Tab completion (bash, zsh, fish)
-- [ ] M2.11 — Integration tests for CLI commands
-- [ ] M2.12 — `--json` output mode for all commands
+- [x] M2.10 — Tab completion (bash, zsh, fish)
+- [x] M2.11 — Integration tests for CLI commands
+- [x] M2.12 — `--json` output mode for all commands
 
 ---
 

@@ -277,6 +277,40 @@ func (idx *Index) TaskCount() (int, error) {
 	return count, err
 }
 
+// DistinctTags returns all unique tags across all tasks, sorted alphabetically.
+func (idx *Index) DistinctTags() ([]string, error) {
+	return idx.distinctStrings("SELECT DISTINCT tag FROM task_tags ORDER BY tag")
+}
+
+// DistinctBoxes returns all unique box values across all tasks, sorted alphabetically.
+func (idx *Index) DistinctBoxes() ([]string, error) {
+	return idx.distinctStrings("SELECT DISTINCT box FROM tasks WHERE box IS NOT NULL AND box != '' ORDER BY box")
+}
+
+// DistinctContexts returns all unique context values across all tasks, sorted alphabetically.
+func (idx *Index) DistinctContexts() ([]string, error) {
+	return idx.distinctStrings("SELECT DISTINCT context FROM task_contexts ORDER BY context")
+}
+
+// distinctStrings runs a single-column query and returns the results as a string slice.
+func (idx *Index) distinctStrings(query string) ([]string, error) {
+	rows, err := idx.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var results []string
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		results = append(results, s)
+	}
+	return results, rows.Err()
+}
+
 // Search performs a full-text search across task titles and bodies.
 // Uses SQLite FTS5 for fast matching. Returns tasks ranked by relevance.
 func (idx *Index) Search(query string) ([]*IndexedTask, error) {
