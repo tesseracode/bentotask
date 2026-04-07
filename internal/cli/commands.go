@@ -336,7 +336,22 @@ var taskShowCmd = &cobra.Command{
 		}
 
 		if isJSON(cmd) {
-			return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
+			tj := taskToJSON(task, relPath)
+			// Include links in JSON output
+			linkInfos, _ := a.GetTaskLinks(task.ID)
+			if len(linkInfos) > 0 {
+				displays := make([]LinkDisplay, len(linkInfos))
+				for i, info := range linkInfos {
+					displays[i] = LinkDisplay{
+						Type:      string(info.Type),
+						Direction: info.Direction,
+						TaskID:    info.TaskID,
+						TaskTitle: info.TaskTitle,
+					}
+				}
+				tj.Links = linksToJSON(displays)
+			}
+			return writeJSON(cmd.OutOrStdout(), tj)
 		}
 
 		cmd.Printf("ID:       %s\n", style.Dim(task.ID))
@@ -376,6 +391,21 @@ var taskShowCmd = &cobra.Command{
 		cmd.Printf("Updated:  %s\n", style.Dim(task.Updated.Format("2006-01-02 15:04")))
 		if task.CompletedAt != nil {
 			cmd.Printf("Done:     %s\n", task.CompletedAt.Format("2006-01-02 15:04"))
+		}
+
+		// Show links
+		linkInfos, _ := a.GetTaskLinks(task.ID)
+		if len(linkInfos) > 0 {
+			displays := make([]LinkDisplay, len(linkInfos))
+			for i, info := range linkInfos {
+				displays[i] = LinkDisplay{
+					Type:      string(info.Type),
+					Direction: info.Direction,
+					TaskID:    info.TaskID,
+					TaskTitle: info.TaskTitle,
+				}
+			}
+			renderLinks(cmd, displays)
 		}
 
 		if task.Body != "" {

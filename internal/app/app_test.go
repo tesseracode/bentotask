@@ -568,3 +568,277 @@ func TestListRoutines(t *testing.T) {
 		t.Errorf("ListRoutines() = %d, want 1 (should only return routines)", len(routines))
 	}
 }
+
+// --- Linking tests ---
+
+func TestLinkTasks(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	source, target, err := a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	if err != nil {
+		t.Fatalf("LinkTasks() error: %v", err)
+	}
+	if source.ID != taskA.ID {
+		t.Errorf("source.ID = %q, want %q", source.ID, taskA.ID)
+	}
+	if target.ID != taskB.ID {
+		t.Errorf("target.ID = %q, want %q", target.ID, taskB.ID)
+	}
+	if len(source.Links) != 1 {
+		t.Fatalf("source.Links = %d, want 1", len(source.Links))
+	}
+	if source.Links[0].Type != model.LinkRelatedTo {
+		t.Errorf("link type = %q, want %q", source.Links[0].Type, model.LinkRelatedTo)
+	}
+	if source.Links[0].Target != taskB.ID {
+		t.Errorf("link target = %q, want %q", source.Links[0].Target, taskB.ID)
+	}
+}
+
+func TestLinkTasksDependsOn(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	_, _, err := a.LinkTasks(taskA.ID, taskB.ID, model.LinkDependsOn)
+	if err != nil {
+		t.Fatalf("LinkTasks(depends-on) error: %v", err)
+	}
+
+	// Verify persisted to disk
+	reloaded, _, _ := a.GetTask(taskA.ID)
+	if len(reloaded.Links) != 1 {
+		t.Fatalf("persisted links = %d, want 1", len(reloaded.Links))
+	}
+	if reloaded.Links[0].Type != model.LinkDependsOn {
+		t.Errorf("persisted link type = %q, want depends-on", reloaded.Links[0].Type)
+	}
+}
+
+func TestLinkTasksSelfLink(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Task", TaskOptions{})
+
+	_, _, err := a.LinkTasks(task.ID, task.ID, model.LinkRelatedTo)
+	if err == nil {
+		t.Error("self-link should return error")
+	}
+}
+
+func TestLinkTasksDuplicate(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	_, _, err := a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	if err == nil {
+		t.Error("duplicate link should return error")
+	}
+}
+
+func TestLinkTasksDifferentTypes(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	// Same pair can have different link types
+	_, _, err := a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	if err != nil {
+		t.Fatalf("first link error: %v", err)
+	}
+	_, _, err = a.LinkTasks(taskA.ID, taskB.ID, model.LinkDependsOn)
+	if err != nil {
+		t.Fatalf("second link (different type) error: %v", err)
+	}
+
+	reloaded, _, _ := a.GetTask(taskA.ID)
+	if len(reloaded.Links) != 2 {
+		t.Errorf("links = %d, want 2 (different types allowed)", len(reloaded.Links))
+	}
+}
+
+func TestLinkTasksCycleDetection(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+	taskC, _ := a.AddTask("Task C", TaskOptions{})
+
+	// A depends-on B
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkDependsOn)
+	// B depends-on C
+	_, _, _ = a.LinkTasks(taskB.ID, taskC.ID, model.LinkDependsOn)
+	// C depends-on A would create a cycle
+	_, _, err := a.LinkTasks(taskC.ID, taskA.ID, model.LinkDependsOn)
+	if err == nil {
+		t.Error("cycle should be detected and rejected")
+	}
+}
+
+func TestLinkTasksCycleDetectionBlocks(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	// A blocks B
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkBlocks)
+	// B blocks A would create a cycle
+	_, _, err := a.LinkTasks(taskB.ID, taskA.ID, model.LinkBlocks)
+	if err == nil {
+		t.Error("blocks cycle should be detected")
+	}
+}
+
+func TestLinkTasksRelatedToNoCycleCheck(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	// related-to links are bidirectional/informational — no cycle check
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	_, _, err := a.LinkTasks(taskB.ID, taskA.ID, model.LinkRelatedTo)
+	if err != nil {
+		t.Errorf("related-to should allow bidirectional links, got: %v", err)
+	}
+}
+
+func TestUnlinkTasks(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+
+	source, target, err := a.UnlinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	if err != nil {
+		t.Fatalf("UnlinkTasks() error: %v", err)
+	}
+	if source.ID != taskA.ID || target.ID != taskB.ID {
+		t.Errorf("unexpected source/target IDs")
+	}
+
+	// Verify link removed from disk
+	reloaded, _, _ := a.GetTask(taskA.ID)
+	if len(reloaded.Links) != 0 {
+		t.Errorf("links after unlink = %d, want 0", len(reloaded.Links))
+	}
+}
+
+func TestUnlinkTasksNotFound(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	_, _, err := a.UnlinkTasks(taskA.ID, taskB.ID, model.LinkRelatedTo)
+	if err == nil {
+		t.Error("unlinking non-existent link should return error")
+	}
+}
+
+func TestGetTaskLinks(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+	taskC, _ := a.AddTask("Task C", TaskOptions{})
+
+	// A depends-on B, C related-to A
+	_, _, _ = a.LinkTasks(taskA.ID, taskB.ID, model.LinkDependsOn)
+	_, _, _ = a.LinkTasks(taskC.ID, taskA.ID, model.LinkRelatedTo)
+
+	links, err := a.GetTaskLinks(taskA.ID)
+	if err != nil {
+		t.Fatalf("GetTaskLinks() error: %v", err)
+	}
+	if len(links) != 2 {
+		t.Fatalf("links = %d, want 2 (1 outgoing + 1 incoming)", len(links))
+	}
+
+	// Check outgoing
+	var outgoing, incoming int
+	for _, l := range links {
+		if l.Direction == "outgoing" {
+			outgoing++
+			if l.TaskTitle != "Task B" {
+				t.Errorf("outgoing link title = %q, want 'Task B'", l.TaskTitle)
+			}
+		} else {
+			incoming++
+			if l.TaskTitle != "Task C" {
+				t.Errorf("incoming link title = %q, want 'Task C'", l.TaskTitle)
+			}
+		}
+	}
+	if outgoing != 1 || incoming != 1 {
+		t.Errorf("outgoing=%d incoming=%d, want 1 and 1", outgoing, incoming)
+	}
+}
+
+// --- Cycle detection unit tests ---
+
+func TestHasCycleSimple(t *testing.T) {
+	// A → B → C → A (cycle)
+	graph := map[string][]string{
+		"A": {"B"},
+		"B": {"C"},
+		"C": {"A"},
+	}
+	if !hasCycle(graph, "A") {
+		t.Error("should detect cycle A→B→C→A")
+	}
+}
+
+func TestHasCycleNoCycle(t *testing.T) {
+	// A → B → C (no cycle)
+	graph := map[string][]string{
+		"A": {"B"},
+		"B": {"C"},
+	}
+	if hasCycle(graph, "A") {
+		t.Error("should not detect cycle in linear chain")
+	}
+}
+
+func TestHasCycleSelfLoop(t *testing.T) {
+	graph := map[string][]string{
+		"A": {"A"},
+	}
+	if !hasCycle(graph, "A") {
+		t.Error("should detect self-loop")
+	}
+}
+
+func TestHasCycleDiamond(t *testing.T) {
+	// Diamond: A → B, A → C, B → D, C → D (no cycle)
+	graph := map[string][]string{
+		"A": {"B", "C"},
+		"B": {"D"},
+		"C": {"D"},
+	}
+	if hasCycle(graph, "A") {
+		t.Error("diamond graph should not have a cycle")
+	}
+}
+
+func TestHasCycleDisconnected(t *testing.T) {
+	// A → B, C → D (disconnected, no cycle from A)
+	graph := map[string][]string{
+		"A": {"B"},
+		"C": {"D"},
+	}
+	if hasCycle(graph, "A") {
+		t.Error("disconnected graph should not have cycle from A")
+	}
+}

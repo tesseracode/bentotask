@@ -331,6 +331,78 @@ func (idx *Index) Search(query string) ([]*IndexedTask, error) {
 	return idx.collectTasks(rows)
 }
 
+// --- Task Links ---
+
+// IndexedLink represents a link relationship as stored in the SQLite index.
+type IndexedLink struct {
+	SourceID string
+	TargetID string
+	LinkType string
+}
+
+// LoadLinks returns all outgoing links from a task (source → target).
+func (idx *Index) LoadLinks(taskID string) ([]IndexedLink, error) {
+	rows, err := idx.db.Query(
+		"SELECT source_id, target_id, link_type FROM task_links WHERE source_id = ? ORDER BY link_type, target_id",
+		taskID)
+	if err != nil {
+		return nil, fmt.Errorf("load links: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var links []IndexedLink
+	for rows.Next() {
+		var l IndexedLink
+		if err := rows.Scan(&l.SourceID, &l.TargetID, &l.LinkType); err != nil {
+			return nil, fmt.Errorf("scan link: %w", err)
+		}
+		links = append(links, l)
+	}
+	return links, rows.Err()
+}
+
+// LoadBacklinks returns all incoming links to a task (source → this task).
+func (idx *Index) LoadBacklinks(taskID string) ([]IndexedLink, error) {
+	rows, err := idx.db.Query(
+		"SELECT source_id, target_id, link_type FROM task_links WHERE target_id = ? ORDER BY link_type, source_id",
+		taskID)
+	if err != nil {
+		return nil, fmt.Errorf("load backlinks: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var links []IndexedLink
+	for rows.Next() {
+		var l IndexedLink
+		if err := rows.Scan(&l.SourceID, &l.TargetID, &l.LinkType); err != nil {
+			return nil, fmt.Errorf("scan backlink: %w", err)
+		}
+		links = append(links, l)
+	}
+	return links, rows.Err()
+}
+
+// DependencyGraph loads all depends-on and blocks edges from the index.
+// Returns a map of sourceID → []targetID for cycle detection.
+func (idx *Index) DependencyGraph() (map[string][]string, error) {
+	rows, err := idx.db.Query(
+		"SELECT source_id, target_id FROM task_links WHERE link_type IN ('depends-on', 'blocks')")
+	if err != nil {
+		return nil, fmt.Errorf("load dependency graph: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	graph := make(map[string][]string)
+	for rows.Next() {
+		var src, tgt string
+		if err := rows.Scan(&src, &tgt); err != nil {
+			return nil, fmt.Errorf("scan edge: %w", err)
+		}
+		graph[src] = append(graph[src], tgt)
+	}
+	return graph, rows.Err()
+}
+
 // --- Habit Completions ---
 
 // LogHabitCompletion inserts a completion record for a habit.

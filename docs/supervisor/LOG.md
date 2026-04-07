@@ -4,6 +4,45 @@
 
 ---
 
+## [2026-04-07] Review: Bug Fix — TaskJSON missing routine steps/schedule
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `af30a5e` — Fix TaskJSON missing routine steps/schedule in --json output
+**Handoff claimed**: Bug found during M4 Group A review — steps and schedule silently dropped from JSON
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `go test ./...` — 185 tests PASS
+- [x] Smoke: `bt routine create --json` — steps array with title, duration, optional now present ✅
+- [x] Smoke: `bt routine show --json` — steps included ✅
+- [x] Smoke: schedule with time + days appears in JSON ✅
+- [x] Smoke: schedule with time only — no empty `days` key (omitempty working) ✅
+- [x] Smoke: YAML frontmatter — `days: []` no longer emitted when days not provided ✅
+- [x] Smoke: regular task JSON — no `steps` or `schedule` keys (omitempty correct) ✅
+
+### Changes
+
+1. **`StepJSON` + `ScheduleJSON` types added to `json.go`** — proper JSON representations with `omitempty` on optional fields
+2. **`TaskJSON` gains `Steps []StepJSON` and `Schedule *ScheduleJSON`** — both `omitempty`, so non-routine tasks unaffected
+3. **`taskToJSON()` populates steps/schedule** — conditional on `len(task.Steps) > 0` and `task.Schedule != nil`
+4. **`RoutineSchedule` YAML tags get `omitempty`** — `Time` and `Days` both omitted when empty, fixing the `days: []` issue
+5. **3 integration tests strengthened** — `TestIntegrationRoutineCreateJSON` verifies step titles/durations, `TestIntegrationRoutineShowJSON` verifies steps present, `TestIntegrationRoutineCreateWithSchedule` verifies schedule time/days in JSON
+
+### Assessment
+
+Surgical fix — 36 new lines in json.go, 2 changed lines in model, 27 lines of test assertions. All three fix targets hit:
+- Steps in JSON ✅
+- Schedule in JSON ✅  
+- YAML omitempty ✅
+
+No regressions. Non-routine tasks unaffected (verified via smoke test).
+
+**Verdict**: **APPROVED** ✅
+
+---
+
 ## [2026-04-07] Review: M4 Group A — Routines (M4.1 + M4.2 + M4.3)
 
 **Reviewed by**: Supervisor Agent

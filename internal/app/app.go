@@ -279,6 +279,180 @@ func (a *App) RebuildIndex() (int, error) {
 	return a.Index.RebuildIndex(a.DataDir)
 }
 
+// --- Task Linking ---
+
+// LinkTasks creates a link between two tasks. It validates that both tasks exist,
+// the link type is valid, and the link doesn't create a dependency cycle.
+func (a *App) LinkTasks(sourceIDOrPrefix, targetIDOrPrefix string, linkType model.LinkType) (*model.Task, *model.Task, error) {
+	// Resolve both tasks
+	source, sourceRel, err := a.GetTask(sourceIDOrPrefix)
+	if err != nil {
+		return nil, nil, fmt.Errorf("source task: %w", err)
+	}
+	target, _, err := a.GetTask(targetIDOrPrefix)
+	if err != nil {
+		return nil, nil, fmt.Errorf("target task: %w", err)
+	}
+
+	// Cannot link a task to itself
+	if source.ID == target.ID {
+		return nil, nil, fmt.Errorf("cannot link a task to itself")
+	}
+
+	// Check for duplicate link
+	for _, existing := range source.Links {
+		if existing.Target == target.ID && existing.Type == linkType {
+			return nil, nil, fmt.Errorf("link already exists: %s %s %s",
+				source.ShortID(8), linkType, target.ShortID(8))
+		}
+	}
+
+	// For depends-on and blocks, check for cycles
+	if linkType == model.LinkDependsOn || linkType == model.LinkBlocks {
+		graph, err := a.Index.DependencyGraph()
+		if err != nil {
+			return nil, nil, fmt.Errorf("load dependency graph: %w", err)
+		}
+		// Add the proposed edge and check for cycles
+		graph[source.ID] = append(graph[source.ID], target.ID)
+		if hasCycle(graph, source.ID) {
+			return nil, nil, fmt.Errorf("link would create a dependency cycle")
+		}
+	}
+
+	// Add the link to source task
+	source.Links = append(source.Links, model.Link{
+		Type:   linkType,
+		Target: target.ID,
+	})
+	source.Updated = time.Now().UTC()
+
+	// Save source
+	if err := a.saveTask(source, sourceRel); err != nil {
+		return nil, nil, fmt.Errorf("save source: %w", err)
+	}
+
+	return source, target, nil
+}
+
+// UnlinkTasks removes a link between two tasks.
+func (a *App) UnlinkTasks(sourceIDOrPrefix, targetIDOrPrefix string, linkType model.LinkType) (*model.Task, *model.Task, error) {
+	source, sourceRel, err := a.GetTask(sourceIDOrPrefix)
+	if err != nil {
+		return nil, nil, fmt.Errorf("source task: %w", err)
+	}
+	target, _, err := a.GetTask(targetIDOrPrefix)
+	if err != nil {
+		return nil, nil, fmt.Errorf("target task: %w", err)
+	}
+
+	// Find and remove the link
+	found := false
+	var remaining []model.Link
+	for _, link := range source.Links {
+		if link.Target == target.ID && link.Type == linkType {
+			found = true
+			continue
+		}
+		remaining = append(remaining, link)
+	}
+	if !found {
+		return nil, nil, fmt.Errorf("no %s link from %s to %s",
+			linkType, source.ShortID(8), target.ShortID(8))
+	}
+
+	source.Links = remaining
+	source.Updated = time.Now().UTC()
+
+	if err := a.saveTask(source, sourceRel); err != nil {
+		return nil, nil, fmt.Errorf("save source: %w", err)
+	}
+
+	return source, target, nil
+}
+
+// TaskLinks returns outgoing and incoming links for a task, with titles resolved.
+type TaskLinkInfo struct {
+	Type      model.LinkType
+	Direction string // "outgoing" or "incoming"
+	TaskID    string
+	TaskTitle string
+}
+
+// GetTaskLinks returns all links (outgoing + incoming) for a task with titles.
+func (a *App) GetTaskLinks(taskID string) ([]TaskLinkInfo, error) {
+	outgoing, err := a.Index.LoadLinks(taskID)
+	if err != nil {
+		return nil, err
+	}
+	incoming, err := a.Index.LoadBacklinks(taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []TaskLinkInfo
+
+	for _, l := range outgoing {
+		info := TaskLinkInfo{
+			Type:      model.LinkType(l.LinkType),
+			Direction: "outgoing",
+			TaskID:    l.TargetID,
+		}
+		if indexed, err := a.Index.GetTask(l.TargetID); err == nil {
+			info.TaskTitle = indexed.Title
+		} else {
+			info.TaskTitle = "(unknown)"
+		}
+		result = append(result, info)
+	}
+
+	for _, l := range incoming {
+		info := TaskLinkInfo{
+			Type:      model.LinkType(l.LinkType),
+			Direction: "incoming",
+			TaskID:    l.SourceID,
+		}
+		if indexed, err := a.Index.GetTask(l.SourceID); err == nil {
+			info.TaskTitle = indexed.Title
+		} else {
+			info.TaskTitle = "(unknown)"
+		}
+		result = append(result, info)
+	}
+
+	return result, nil
+}
+
+// hasCycle performs a DFS to detect cycles in the dependency graph starting from start.
+func hasCycle(graph map[string][]string, start string) bool {
+	const (
+		white = 0 // unvisited
+		gray  = 1 // in current DFS path
+		black = 2 // fully explored
+	)
+
+	color := make(map[string]int)
+
+	var dfs func(node string) bool
+	dfs = func(node string) bool {
+		color[node] = gray
+		for _, neighbor := range graph[node] {
+			switch color[neighbor] {
+			case gray:
+				return true // back edge → cycle
+			case white:
+				if dfs(neighbor) {
+					return true
+				}
+			}
+		}
+		color[node] = black
+		return false
+	}
+
+	return dfs(start)
+}
+
 // --- Routines ---
 
 // AddRoutine creates a new routine with the given steps and optional schedule.

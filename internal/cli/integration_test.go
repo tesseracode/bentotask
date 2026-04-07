@@ -48,6 +48,7 @@ func resetFlags() {
 		indexCmd, indexRebuildCmd,
 		habitCmd, habitAddCmd, habitLogCmd, habitStatsCmd, habitListCmd,
 		routineCmd, routineCreateCmd, routineListCmd, routineShowCmd, routinePlayCmd,
+		linkCmd, unlinkCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -1110,5 +1111,286 @@ func TestIntegrationRoutineAlias(t *testing.T) {
 	id := strings.TrimSpace(out)
 	if len(id) != 26 {
 		t.Errorf("expected 26-char ULID, got %d: %q", len(id), id)
+	}
+}
+
+// --- Link integration tests ---
+
+func TestIntegrationLinkAndShow(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Create two tasks
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	// Link them
+	out, err := executeCmdInDir(t, dataDir, "link", idA, idB, "-t", "depends-on")
+	if err != nil {
+		t.Fatalf("link error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Linked:") {
+		t.Errorf("link output should contain 'Linked:', got: %s", out)
+	}
+
+	// Show should display the link
+	out, err = executeCmdInDir(t, dataDir, "task", "show", idA)
+	if err != nil {
+		t.Fatalf("show error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Links:") {
+		t.Errorf("show should contain 'Links:' section, got: %s", out)
+	}
+	if !strings.Contains(out, "depends-on") {
+		t.Errorf("show should contain link type, got: %s", out)
+	}
+}
+
+func TestIntegrationLinkJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Source")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Target")
+	idB := strings.TrimSpace(out)
+
+	out, err := executeCmdInDir(t, dataDir, "link", "--json", idA, idB, "-t", "blocks")
+	if err != nil {
+		t.Fatalf("link --json error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result["link_type"] != "blocks" {
+		t.Errorf("JSON link_type = %v, want 'blocks'", result["link_type"])
+	}
+	if result["source_id"] != idA {
+		t.Errorf("JSON source_id = %v, want %q", result["source_id"], idA)
+	}
+	if result["target_id"] != idB {
+		t.Errorf("JSON target_id = %v, want %q", result["target_id"], idB)
+	}
+}
+
+func TestIntegrationLinkDefaultType(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	// Default type should be related-to
+	out, err := executeCmdInDir(t, dataDir, "link", "--json", idA, idB)
+	if err != nil {
+		t.Fatalf("link error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v", err)
+	}
+	if result["link_type"] != "related-to" {
+		t.Errorf("default link_type = %v, want 'related-to'", result["link_type"])
+	}
+}
+
+func TestIntegrationUnlink(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	// Link then unlink
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB)
+
+	out, err := executeCmdInDir(t, dataDir, "unlink", idA, idB)
+	if err != nil {
+		t.Fatalf("unlink error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Unlinked:") {
+		t.Errorf("unlink output should contain 'Unlinked:', got: %s", out)
+	}
+
+	// Show should no longer have links
+	out, err = executeCmdInDir(t, dataDir, "task", "show", idA)
+	if err != nil {
+		t.Fatalf("show error: %v\noutput: %s", err, out)
+	}
+	if strings.Contains(out, "Links:") {
+		t.Errorf("show after unlink should NOT contain 'Links:', got: %s", out)
+	}
+}
+
+func TestIntegrationUnlinkJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB, "-t", "depends-on")
+
+	out, err := executeCmdInDir(t, dataDir, "unlink", "--json", idA, idB, "-t", "depends-on")
+	if err != nil {
+		t.Fatalf("unlink --json error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result["removed"] != true {
+		t.Errorf("JSON removed = %v, want true", result["removed"])
+	}
+}
+
+func TestIntegrationLinkSelfError(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task")
+	id := strings.TrimSpace(out)
+
+	_, err := executeCmdInDir(t, dataDir, "link", id, id)
+	if err == nil {
+		t.Error("self-link should return error")
+	}
+}
+
+func TestIntegrationLinkCycleError(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task C")
+	idC := strings.TrimSpace(out)
+
+	// A depends-on B, B depends-on C
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB, "-t", "depends-on")
+	_, _ = executeCmdInDir(t, dataDir, "link", idB, idC, "-t", "depends-on")
+
+	// C depends-on A would create cycle
+	_, err := executeCmdInDir(t, dataDir, "link", idC, idA, "-t", "depends-on")
+	if err == nil {
+		t.Error("cycle should be detected and rejected")
+	}
+}
+
+func TestIntegrationLinkDuplicateError(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB)
+	_, err := executeCmdInDir(t, dataDir, "link", idA, idB)
+	if err == nil {
+		t.Error("duplicate link should return error")
+	}
+}
+
+func TestIntegrationUnlinkNotFoundError(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	_, err := executeCmdInDir(t, dataDir, "unlink", idA, idB)
+	if err == nil {
+		t.Error("unlinking non-existent link should return error")
+	}
+}
+
+func TestIntegrationShowLinksJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB, "-t", "depends-on")
+
+	out, err := executeCmdInDir(t, dataDir, "task", "show", "--json", idA)
+	if err != nil {
+		t.Fatalf("show --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if len(result.Links) != 1 {
+		t.Fatalf("JSON links = %d, want 1", len(result.Links))
+	}
+	if result.Links[0]["type"] != "depends-on" {
+		t.Errorf("JSON link type = %q, want 'depends-on'", result.Links[0]["type"])
+	}
+	if result.Links[0]["direction"] != "outgoing" {
+		t.Errorf("JSON link direction = %q, want 'outgoing'", result.Links[0]["direction"])
+	}
+	if result.Links[0]["task_title"] != "Task B" {
+		t.Errorf("JSON link task_title = %q, want 'Task B'", result.Links[0]["task_title"])
+	}
+}
+
+func TestIntegrationShowBacklinksJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	// A depends-on B. Showing B should show incoming link from A.
+	_, _ = executeCmdInDir(t, dataDir, "link", idA, idB, "-t", "depends-on")
+
+	out, err := executeCmdInDir(t, dataDir, "task", "show", "--json", idB)
+	if err != nil {
+		t.Fatalf("show --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if len(result.Links) != 1 {
+		t.Fatalf("JSON links = %d, want 1 (incoming)", len(result.Links))
+	}
+	if result.Links[0]["direction"] != "incoming" {
+		t.Errorf("JSON link direction = %q, want 'incoming'", result.Links[0]["direction"])
+	}
+	if result.Links[0]["task_title"] != "Task A" {
+		t.Errorf("JSON link task_title = %q, want 'Task A'", result.Links[0]["task_title"])
+	}
+}
+
+func TestIntegrationLinkQuiet(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Task A")
+	idA := strings.TrimSpace(out)
+	out, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task B")
+	idB := strings.TrimSpace(out)
+
+	out, err := executeCmdInDir(t, dataDir, "link", "-q", idA, idB)
+	if err != nil {
+		t.Fatalf("link -q error: %v", err)
+	}
+	parts := strings.Fields(strings.TrimSpace(out))
+	if len(parts) != 2 {
+		t.Errorf("quiet link should output 2 IDs, got: %q", out)
 	}
 }

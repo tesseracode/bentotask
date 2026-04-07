@@ -36,6 +36,9 @@ type TaskJSON struct {
 	// Routine-specific fields
 	Steps    []StepJSON    `json:"steps,omitempty"`
 	Schedule *ScheduleJSON `json:"schedule,omitempty"`
+
+	// Links (populated by show command when links exist)
+	Links []map[string]string `json:"links,omitempty"`
 }
 
 // StepJSON is the JSON representation of a routine step.
