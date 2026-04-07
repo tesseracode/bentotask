@@ -466,3 +466,105 @@ func TestListHabits(t *testing.T) {
 		t.Errorf("ListHabits() = %d, want 1 (should only return habits)", len(habits))
 	}
 }
+
+// --- Routine tests ---
+
+func TestAddRoutine(t *testing.T) {
+	a := openTestApp(t)
+
+	r, err := a.AddRoutine("Morning Routine", RoutineOptions{
+		Steps: []model.RoutineStep{
+			{Title: "Shower", Duration: 5},
+			{Title: "Breakfast", Duration: 15},
+			{Title: "Review inbox", Duration: 10},
+		},
+	})
+	if err != nil {
+		t.Fatalf("AddRoutine() error: %v", err)
+	}
+	if r.Type != "routine" {
+		t.Errorf("Type = %q, want 'routine'", r.Type)
+	}
+	if r.Status != "active" {
+		t.Errorf("Status = %q, want 'active'", r.Status)
+	}
+	if len(r.Steps) != 3 {
+		t.Errorf("Steps = %d, want 3", len(r.Steps))
+	}
+	if r.EstimatedDuration != 30 {
+		t.Errorf("EstimatedDuration = %d, want 30 (sum of step durations)", r.EstimatedDuration)
+	}
+}
+
+func TestAddRoutineWithSchedule(t *testing.T) {
+	a := openTestApp(t)
+
+	r, err := a.AddRoutine("Evening Wind-down", RoutineOptions{
+		Steps: []model.RoutineStep{
+			{Title: "Journal", Duration: 10},
+			{Title: "Read", Duration: 30},
+		},
+		Schedule: &model.RoutineSchedule{
+			Time: "21:00",
+			Days: []string{"mon", "tue", "wed", "thu", "fri"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("AddRoutine() error: %v", err)
+	}
+	if r.Schedule == nil {
+		t.Fatal("Schedule should not be nil")
+	}
+	if r.Schedule.Time != "21:00" {
+		t.Errorf("Schedule.Time = %q, want '21:00'", r.Schedule.Time)
+	}
+	if len(r.Schedule.Days) != 5 {
+		t.Errorf("Schedule.Days = %d, want 5", len(r.Schedule.Days))
+	}
+}
+
+func TestAddRoutineNoSteps(t *testing.T) {
+	a := openTestApp(t)
+
+	_, err := a.AddRoutine("Empty", RoutineOptions{
+		Steps: []model.RoutineStep{},
+	})
+	if err == nil {
+		t.Error("AddRoutine with no steps should return validation error")
+	}
+}
+
+func TestAddRoutineOptionalSteps(t *testing.T) {
+	a := openTestApp(t)
+
+	r, err := a.AddRoutine("Flexible morning", RoutineOptions{
+		Steps: []model.RoutineStep{
+			{Title: "Coffee", Duration: 5},
+			{Title: "Stretch", Duration: 10, Optional: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("AddRoutine() error: %v", err)
+	}
+	if !r.Steps[1].Optional {
+		t.Error("Step[1] should be optional")
+	}
+}
+
+func TestListRoutines(t *testing.T) {
+	a := openTestApp(t)
+
+	// Add a routine and a regular task
+	_, _ = a.AddRoutine("Morning", RoutineOptions{
+		Steps: []model.RoutineStep{{Title: "Wake up"}},
+	})
+	_, _ = a.AddTask("Regular task", TaskOptions{})
+
+	routines, err := a.ListRoutines()
+	if err != nil {
+		t.Fatalf("ListRoutines() error: %v", err)
+	}
+	if len(routines) != 1 {
+		t.Errorf("ListRoutines() = %d, want 1 (should only return routines)", len(routines))
+	}
+}

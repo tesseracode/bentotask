@@ -279,6 +279,75 @@ func (a *App) RebuildIndex() (int, error) {
 	return a.Index.RebuildIndex(a.DataDir)
 }
 
+// --- Routines ---
+
+// AddRoutine creates a new routine with the given steps and optional schedule.
+func (a *App) AddRoutine(title string, opts RoutineOptions) (*model.Task, error) {
+	now := time.Now().UTC()
+
+	task := &model.Task{
+		ID:      model.NewID(),
+		Title:   title,
+		Type:    model.TaskTypeRoutine,
+		Status:  model.StatusActive,
+		Created: now,
+		Updated: now,
+		Steps:   opts.Steps,
+	}
+
+	if opts.Schedule != nil {
+		task.Schedule = opts.Schedule
+	}
+	if opts.Priority != "" {
+		task.Priority = opts.Priority
+	}
+	if opts.Energy != "" {
+		task.Energy = opts.Energy
+	}
+	if len(opts.Tags) > 0 {
+		task.Tags = opts.Tags
+	}
+
+	// Compute estimated duration from step durations
+	totalDur := 0
+	for _, s := range opts.Steps {
+		totalDur += s.Duration
+	}
+	if totalDur > 0 {
+		task.EstimatedDuration = totalDur
+	}
+
+	if errs := task.Validate(); len(errs) > 0 {
+		return nil, fmt.Errorf("validation failed: %s", errs[0])
+	}
+
+	relPath := taskFilePath(task)
+	absPath := filepath.Join(a.DataDir, relPath)
+
+	if err := store.WriteFile(absPath, task); err != nil {
+		return nil, fmt.Errorf("write routine: %w", err)
+	}
+	if err := a.Index.UpsertTask(task, relPath); err != nil {
+		return nil, fmt.Errorf("index routine: %w", err)
+	}
+
+	return task, nil
+}
+
+// ListRoutines returns all routine tasks from the index.
+func (a *App) ListRoutines() ([]*store.IndexedTask, error) {
+	return a.Index.ListTasks(&store.TaskFilter{Type: model.TaskTypeRoutine})
+}
+
+// RoutineOptions holds options for creating a new routine.
+type RoutineOptions struct {
+	Steps    []model.RoutineStep
+	Schedule *model.RoutineSchedule
+	Priority model.Priority
+	Energy   model.Energy
+	Tags     []string
+}
+
 // --- Habits ---
 
 // AddHabit creates a new habit task with the given frequency and recurrence.

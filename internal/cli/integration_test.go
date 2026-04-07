@@ -47,6 +47,7 @@ func resetFlags() {
 		searchCmd,
 		indexCmd, indexRebuildCmd,
 		habitCmd, habitAddCmd, habitLogCmd, habitStatsCmd, habitListCmd,
+		routineCmd, routineCreateCmd, routineListCmd, routineShowCmd, routinePlayCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -868,5 +869,219 @@ func TestIntegrationRebuildPreservesHabitCompletions(t *testing.T) {
 	}
 	if stats["total_completions"].(float64) != 2 {
 		t.Errorf("total_completions after rebuild = %v, want 2", stats["total_completions"])
+	}
+}
+
+// --- Routine integration tests ---
+
+func TestIntegrationRoutineCreateAndList(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "Morning Routine",
+		"--step", "Shower:5", "--step", "Breakfast:15", "--step", "Review inbox:10")
+	if err != nil {
+		t.Fatalf("routine create error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Created routine") {
+		t.Errorf("routine create output should contain 'Created routine', got: %s", out)
+	}
+	if !strings.Contains(out, "3 steps") {
+		t.Errorf("routine create output should contain '3 steps', got: %s", out)
+	}
+
+	// List routines
+	out, err = executeCmdInDir(t, dataDir, "routine", "list")
+	if err != nil {
+		t.Fatalf("routine list error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Morning Routine") {
+		t.Errorf("routine list should contain title, got: %s", out)
+	}
+}
+
+func TestIntegrationRoutineCreateJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "--json", "Evening",
+		"--step", "Journal:10", "--step", "Read:30", "--tag", "wellness")
+	if err != nil {
+		t.Fatalf("routine create --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result.Title != "Evening" {
+		t.Errorf("JSON title = %q, want %q", result.Title, "Evening")
+	}
+	if result.Type != "routine" {
+		t.Errorf("JSON type = %q, want %q", result.Type, "routine")
+	}
+	if result.Status != "active" {
+		t.Errorf("JSON status = %q, want %q", result.Status, "active")
+	}
+	if result.EstimatedDuration != 40 {
+		t.Errorf("JSON estimated_duration = %d, want 40", result.EstimatedDuration)
+	}
+}
+
+func TestIntegrationRoutineCreateQuiet(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "-q", "Quick",
+		"--step", "Step one:5")
+	if err != nil {
+		t.Fatalf("routine create -q error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+	if len(id) != 26 {
+		t.Errorf("quiet create should output 26-char ULID, got %d chars: %q", len(id), id)
+	}
+}
+
+func TestIntegrationRoutineShow(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "-q", "Show me",
+		"--step", "A:5", "--step", "B:10")
+	if err != nil {
+		t.Fatalf("routine create error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	out, err = executeCmdInDir(t, dataDir, "routine", "show", id)
+	if err != nil {
+		t.Fatalf("routine show error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Show me") {
+		t.Errorf("routine show should contain title, got: %s", out)
+	}
+	if !strings.Contains(out, "1. A") {
+		t.Errorf("routine show should list step 1, got: %s", out)
+	}
+	if !strings.Contains(out, "2. B") {
+		t.Errorf("routine show should list step 2, got: %s", out)
+	}
+}
+
+func TestIntegrationRoutineShowJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "-q", "JSON Show",
+		"--step", "Step:5")
+	if err != nil {
+		t.Fatalf("routine create error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	out, err = executeCmdInDir(t, dataDir, "routine", "show", "--json", id)
+	if err != nil {
+		t.Fatalf("routine show --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result.Title != "JSON Show" {
+		t.Errorf("JSON title = %q, want %q", result.Title, "JSON Show")
+	}
+}
+
+func TestIntegrationRoutinePlayJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "-q", "Play me",
+		"--step", "A:5", "--step", "B:10")
+	if err != nil {
+		t.Fatalf("routine create error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	out, err = executeCmdInDir(t, dataDir, "routine", "play", "--json", id)
+	if err != nil {
+		t.Fatalf("routine play --json error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result["title"] != "Play me" {
+		t.Errorf("JSON title = %v, want 'Play me'", result["title"])
+	}
+	steps, ok := result["steps"].([]any)
+	if !ok || len(steps) != 2 {
+		t.Errorf("JSON steps should have 2 items, got: %v", result["steps"])
+	}
+}
+
+func TestIntegrationRoutineListEmpty(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "list")
+	if err != nil {
+		t.Fatalf("routine list error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "No routines found") {
+		t.Errorf("empty routine list should show hint, got: %s", out)
+	}
+}
+
+func TestIntegrationRoutineCreateNoSteps(t *testing.T) {
+	dataDir := t.TempDir()
+
+	_, err := executeCmdInDir(t, dataDir, "routine", "create", "Empty routine")
+	if err == nil {
+		t.Error("routine create with no steps should return error")
+	}
+}
+
+func TestIntegrationRoutineShowNonRoutine(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "add", "-q", "Regular task")
+	if err != nil {
+		t.Fatalf("add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	_, err = executeCmdInDir(t, dataDir, "routine", "show", id)
+	if err == nil {
+		t.Error("routine show on non-routine should return error")
+	}
+}
+
+func TestIntegrationRoutineCreateWithSchedule(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "routine", "create", "--json", "Scheduled",
+		"--step", "Meditate:10", "--schedule-time", "07:00", "--schedule-days", "mon,wed,fri")
+	if err != nil {
+		t.Fatalf("routine create with schedule error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result.Type != "routine" {
+		t.Errorf("type = %q, want routine", result.Type)
+	}
+}
+
+func TestIntegrationRoutineAlias(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// bt r create (alias form)
+	out, err := executeCmdInDir(t, dataDir, "r", "create", "-q", "Alias test",
+		"--step", "Step:5")
+	if err != nil {
+		t.Fatalf("r create error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+	if len(id) != 26 {
+		t.Errorf("expected 26-char ULID, got %d: %q", len(id), id)
 	}
 }

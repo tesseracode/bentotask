@@ -167,6 +167,32 @@ func TestValidateRoutineValid(t *testing.T) {
 	}
 }
 
+func TestValidateRoutineWithTitleSteps(t *testing.T) {
+	task := newValidTask()
+	task.Type = TaskTypeRoutine
+	task.Steps = []RoutineStep{
+		{Title: "Shower", Duration: 5},
+		{Title: "Breakfast", Duration: 15, Optional: true},
+	}
+	errs := task.Validate()
+	if len(errs) != 0 {
+		t.Errorf("valid routine with title steps returned errors: %v", errs)
+	}
+}
+
+func TestValidateRoutineStepRequiresTitleOrRef(t *testing.T) {
+	task := newValidTask()
+	task.Type = TaskTypeRoutine
+	task.Steps = []RoutineStep{
+		{Title: "Valid step"},
+		{}, // empty — neither title nor ref
+	}
+	errs := task.Validate()
+	if !containsError(errs, "step[1]: title or ref is required") {
+		t.Errorf("expected step validation error, got: %v", errs)
+	}
+}
+
 func TestValidateLinks(t *testing.T) {
 	task := newValidTask()
 	task.Links = []Link{

@@ -69,6 +69,11 @@ func (t *Task) Validate() []string {
 		if len(t.Steps) == 0 {
 			errs = append(errs, "routines require at least one step")
 		}
+		for i, step := range t.Steps {
+			if step.Title == "" && step.Ref == "" {
+				errs = append(errs, fmt.Sprintf("step[%d]: title or ref is required", i))
+			}
+		}
 	}
 
 	// Link validation

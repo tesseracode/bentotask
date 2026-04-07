@@ -93,8 +93,10 @@ type HabitFrequency struct {
 
 // RoutineStep is one step in a routine's ordered sequence.
 type RoutineStep struct {
-	Ref      string `yaml:"ref"`      // ULID of the task/habit to perform
-	Optional bool   `yaml:"optional"` // Can this step be skipped?
+	Title    string `yaml:"title"`              // Display name for this step
+	Duration int    `yaml:"duration,omitempty"` // Estimated duration in minutes (0 = untimed)
+	Ref      string `yaml:"ref,omitempty"`      // Optional ULID of a linked task/habit
+	Optional bool   `yaml:"optional,omitempty"` // Can this step be skipped?
 }
 
 // RoutineSchedule defines when a routine should be triggered.

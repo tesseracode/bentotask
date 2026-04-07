@@ -74,9 +74,9 @@
 ## Milestone 4: Routines & Links (Phase 2b)
 **Goal**: Tasks can be grouped into routines and linked to each other.
 
-- [ ] M4.1 — Routine data model (ordered step sequence)
-- [ ] M4.2 — `bt routine create` / `bt routine play`
-- [ ] M4.3 — Routine play mode in terminal (step-by-step, timers)
+- [x] M4.1 — Routine data model (ordered step sequence)
+- [x] M4.2 — `bt routine create` / `bt routine play`
+- [x] M4.3 — Routine play mode in terminal (step-by-step, timers)
 - [ ] M4.4 — Task linking (depends-on, blocks, related-to)
 - [ ] M4.5 — Dependency validation (cycle detection)
 - [ ] M4.6 — `bt link` / `bt unlink` commands
