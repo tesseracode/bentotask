@@ -1,43 +1,43 @@
 # Current Handoff
 
 ## Active Task
-- **Task ID**: M1.1
+- **Task ID**: M1.4 / M1.6
 - **Milestone**: M1 — Core Data Model
-- **Description**: Implement task data model (struct + serialization)
+- **Description**: File watcher + remaining unit tests
 - **Status**: Not Started
 - **Assigned**: 2026-04-06
 
 ## Last Session Summary
-- **Session 1 (2026-04-05)**: Full planning phase — SPEC.md, 3 ADRs (all APPROVED), tracking infrastructure
-- **Session 2 (2026-04-06)**: M0 Bootstrap COMPLETE
-  - M0.6: Go module (`github.com/tesserabox/bentotask`), folder structure, root Cobra command
-  - M0.7: golangci-lint v2 config, Makefile (build/test/lint/fmt/clean/help), CONTRIBUTING.md
-  - M0.8: 3 passing tests (Execute, VersionCommand, RootHasGlobalFlags), GitHub Actions CI
-  - Fixed: version command uses `cmd.Printf` for testability, unused `args` param, lint v2 config
+- **Session 1 (2026-04-05)**: Full planning phase — SPEC.md, 3 ADRs (all APPROVED)
+- **Session 2 (2026-04-06)**: M0 COMPLETE + M1.1, M1.2, M1.3, M1.5 done
+  - M1.1: Task data model — Task struct, enums, validation, helpers (18 tests)
+  - M1.2: Markdown I/O — Parse, Marshal, WriteFile with atomic writes (11 tests)
+  - M1.5: ULID generation — NewID, NewIDAt, IDTime, MatchesPrefix (6 tests)
+  - M1.3: SQLite index — schema, upsert, delete, query, filter, rebuild from files (13 tests)
+  - Review feedback addressed: TODO for temp file naming, tracking docs
 
 ## Current State
-- **M0 is COMPLETE** — all 8 tasks done, all acceptance criteria met
+- **M0 COMPLETE**, **M1.1-M1.3 + M1.5 COMPLETE**
 - Module: `github.com/tesserabox/bentotask`
-- Dependencies: cobra v1.10.2
-- 5 commits on `main` branch
-- `make build`, `make test`, `make lint` all pass (0 lint issues, 3 tests)
-- CI configured: `.github/workflows/ci.yml` (test + lint on push/PR)
+- Dependencies: cobra, adrg/frontmatter, yaml.v3, oklog/ulid/v2, modernc.org/sqlite
+- `make test`: **48 tests** (3 CLI + 24 model + 24 store) — 0 lint issues
+- Packages built:
+  - `internal/model/` — Task struct, validation, helpers, ULID generation
+  - `internal/store/` — Markdown I/O (atomic writes) + SQLite index (schema, CRUD, filtering, rebuild)
+  - `internal/cli/` — Root Cobra command with global flags
 
 ## Next Steps (in order)
-1. **M1.1: Task data model** — struct definition, field types per ADR-002 frontmatter schema
-2. **M1.2: Markdown + YAML frontmatter reader/writer** — using `adrg/frontmatter`
-3. **M1.3: SQLite index** — schema, create, rebuild from files
-4. **M1.4: File watcher** — `fsnotify` for external changes
-5. **M1.5: ULID generation** — `oklog/ulid` for task IDs
-6. **M1.6: Unit tests** — full coverage for data model & storage layer
+1. **M1.4: File watcher** — `fsnotify` for detecting external changes to .md files
+2. **M1.6: Unit tests** — fill any remaining coverage gaps
+3. **Then M2: Basic CLI** — `bt add`, `bt list`, `bt done`, etc.
 
 ## Blockers
 - None
 
 ## Context for Next Agent
 - Start by reading this file, then `CLAUDE.md` for orientation
-- ADR-002 defines the frontmatter schema and SQLite table structure — read it carefully for M1
-- Key libraries to add: `adrg/frontmatter`, `modernc.org/sqlite`, `oklog/ulid`, `teambition/rrule-go`, `fsnotify/fsnotify`
-- Charm TUI libraries (`bubbletea`, `huh`, `lipgloss`) are for M2, not needed yet
+- ADR-002 §6 defines the sync strategy (mtime + hash) for the file watcher
+- Key library to add: `fsnotify/fsnotify` for filesystem events
+- The index is a cache — RebuildIndex scans .md files and populates SQLite
 - Use `make test` and `make lint` before committing
-- The developer is learning Go — keep things idiomatic, explain patterns
+- **Remember to update tracking docs** when completing tasks

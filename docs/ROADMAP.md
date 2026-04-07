@@ -31,11 +31,11 @@
 ## Milestone 1: Core Data Model (Phase 1a)
 **Goal**: Tasks can be created, stored as markdown, indexed, and queried.
 
-- [ ] M1.1 — Implement task data model (struct + serialization)
-- [ ] M1.2 — Markdown + YAML frontmatter reader/writer
-- [ ] M1.3 — SQLite index: schema, create, rebuild from files
+- [x] M1.1 — Implement task data model (struct + serialization)
+- [x] M1.2 — Markdown + YAML frontmatter reader/writer
+- [x] M1.3 — SQLite index: schema, create, rebuild from files
 - [ ] M1.4 — File watcher for external changes
-- [ ] M1.5 — ULID generation for task IDs
+- [x] M1.5 — ULID generation for task IDs
 - [ ] M1.6 — Unit tests for data model & storage layer
 
 ---
