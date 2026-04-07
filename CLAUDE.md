@@ -76,3 +76,4 @@ bentotask/
 6. **Don't over-architect** — prefer simple, working code over clever abstractions
 7. **Follow Go conventions** — `gofmt`, `golint`, idiomatic error handling
 8. **Ask before making ADR-level decisions** — if something isn't covered by an existing ADR, flag it
+9. **Rebuild the binary after code changes** — run `make build` after any code changes so the `bt` binary stays up to date for smoke testing

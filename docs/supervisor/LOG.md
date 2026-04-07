@@ -4,6 +4,207 @@
 
 ---
 
+## [2026-04-07] Review: Bug Fix — cmd.Println stderr + RebuildIndex habit completions
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `955a8e2` — Fix cmd.Println output going to stderr and RebuildIndex losing habit completions
+**Handoff claimed**: Two bugs fixed from M3 supervisor review + 4 new tests (claimed 163 total, actual 162)
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `go test ./...` — **162 tests PASS** (commit message claims 163, off by 1 — cosmetic)
+- [x] Smoke: `bt add -q "task" > out.txt 2>err.txt` — output now goes to stdout ✅
+- [x] Smoke: `bt list -q > out.txt 2>err.txt` — output now goes to stdout ✅
+- [x] Smoke: `bt add -q "x" | head -1` — piping works ✅
+- [x] Smoke: Habit add → log × 2 → index rebuild → stats — completions survive rebuild (total_completions=2) ✅
+
+### Fix 1: `rootCmd.SetOut(os.Stdout)` — Cobra stderr default
+
+**Problem**: Cobra's `cmd.Print/Println/Printf` call `OutOrStderr()` (not `OutOrStdout()`), which defaults to stderr when no writer is set. All command output went to stderr, breaking shell piping.
+
+**Fix**: `rootCmd.SetOut(os.Stdout)` in `init()` of `root.go`. Child commands inherit this via Cobra's parent chain in `getOut()`.
+
+**Assessment**: Correct fix. Minimal, surgical change (4 lines including comment). New test `TestRootOutputDefaultsToStdout` verifies the writer is `os.Stdout`. Test cleanup in `TestExecute` and `TestVersionCommand` now resets to `os.Stdout` instead of `nil`.
+
+### Fix 2: RebuildIndex repopulates `habit_completions` from markdown body
+
+**Problem**: `RebuildIndex` cleared `habit_completions` but the `WalkDir` loop only called `UpsertTask`, never re-parsed completions from the body. After rebuild, habit completion cache was empty.
+
+**Fix**: Added 7-line block in `RebuildIndex` that checks `task.Type == model.TaskTypeHabit && task.Body != ""`, then calls `habit.ParseCompletionsFromBody(task.Body)` and inserts each via `idx.LogHabitCompletion()`. Warnings are logged to stderr on failure (non-fatal).
+
+**Assessment**: Correct fix. Good use of `ParseCompletionsFromBody` (the same parser used by `HabitStats`). Import of `internal/habit` into `internal/store` creates a new package dependency direction (store → habit) — acceptable since it's only used in rebuild path and habit is a leaf package with no store dependency (no cycle). The `INSERT OR REPLACE` change on `LogHabitCompletion` adds duplicate safety for same-second completions.
+
+**Tests added**:
+- [x] `TestRootOutputDefaultsToStdout` (root_test.go) — verifies writer is `os.Stdout`
+- [x] `TestRebuildIndexRepopulatesHabitCompletions` (index_test.go) — 3 completions in body, rebuild, verify count=3 + regular task has 0
+- [x] `TestIntegrationRebuildPreservesHabitCompletions` (integration_test.go) — end-to-end: habit add → log × 2 → index rebuild → stats JSON shows total_completions=2
+
+### Minor Notes
+
+- Commit message says "4 new tests (163 total)" but actual count is 162. Cosmetic discrepancy, no impact.
+- Package dependency `store → habit` is fine (no cycle), but worth noting for future dependency graph awareness.
+
+**Verdict**: **APPROVED** ✅
+
+Both bugs from the M3 review are fixed correctly with proper tests. The fixes are minimal and targeted.
+
+---
+
+## [2026-04-07] Review: M3 — Habits & Recurrence (Complete Milestone)
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `bf46d2d` — M3: Implement habits and recurrence — streaks, completions, RRULE engine
+**Handoff claimed**: M3 COMPLETE — all 7 tasks done (agent ran out of context, single commit)
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `make test` — **159 tests PASS** across 7 packages (46 new tests)
+- [x] Smoke: `bt habit add` (daily + weekly) — creates habit with correct type/status/recurrence
+- [x] Smoke: `bt habit add --json` — valid JSON with type=habit, status=active, tags
+- [x] Smoke: `bt habit list` — styled table output
+- [x] Smoke: `bt habit log` — records completion, shows streak 🔥
+- [x] Smoke: `bt habit stats` — shows streak, total completions, completion rate
+- [x] Smoke: `bt habit stats --json` — valid JSON with all stats fields
+- [x] Smoke: `bt task show <habit-id>` — body contains `## Completions` section with logged entries
+- [x] Smoke: `bt habit log <non-habit>` — correctly rejects with error
+- [x] Tracking: ROADMAP M3.1-M3.7 all checked ✅
+- [x] Tracking: handoff points to M4, session 5 summary accurate
+- [x] Tracking: supervisor log includes previous review entries from M2 bug fix + M2.10-12
+
+### M3.1 + M3.2: Recurrence Engine — `internal/recurrence/` (156 lines, new)
+
+- [x] Wraps `teambition/rrule-go` with BentoTask-specific API
+- [x] `Parse(s)` — RFC 5545 RRULE parsing, lenient with `RRULE:` prefix
+- [x] `NextAfter(time)` — fixed-anchor: calendar-based next occurrence
+- [x] `NextAfterCompletion(time)` — completion-anchor: clones rule with DTStart=completedAt, interval relative to completion
+- [x] `Between(start, end)` — date range query, handles missing/future DTSTART by re-anchoring
+- [x] `Frequency()` — human-readable descriptions: "daily", "every 3 days", "weekly on Mon, Wed, Fri", "monthly on the 1, 15"
+- [x] `Validate(s)` — syntax validation via attempted parse
+- [x] 13 tests: daily, weekly+BYDAY, monthly+BYMONTHDAY, intervals, invalid, prefix strip, NextAfter, NextAfterCompletion, Between
+
+**Logic audit**:
+- [x] `NextAfterCompletion` correctly clones `OrigOptions` and sets `Dtstart` to completion time — interval is relative to when done
+- [x] `Between` handles edge case where rule's DTSTART is zero or after end by re-anchoring to start
+- [x] `weekdayName` maps rrule.Weekday constants to 3-letter abbreviations with fallback
+
+### M3.3 + M3.6: Habit Package — `internal/habit/` (358 lines, new)
+
+- [x] `Completion` struct: CompletedAt, Duration (min), Note
+- [x] `FormatCompletion` — `"- ISO | Nmin | note"` format (pipe-separated, duration optional)
+- [x] `ParseCompletionLine` — parses format with 1-3 parts, handles note-only (no duration), duration-only, both
+- [x] `ParseCompletionsFromBody` — scans markdown for `## Completions` section, stops at next `##`
+- [x] `AppendCompletionToBody` — inserts after `## Completions` header, creates section if absent
+- [x] 17 tests: format/parse roundtrips, body parsing, append to empty/existing body, edge cases
+
+**Logic audit**:
+- [x] `ParseCompletionLine` ambiguity handling: if 2 parts and second doesn't end in "min", treats as note (line 243). Correct.
+- [x] `AppendCompletionToBody` inserts right after the header line (newest first). When body already has section, inserts correctly.
+- [x] `ParseCompletionsFromBody` stops at next `## ` heading. Won't bleed into other sections.
+
+### M3.5: Streak Engine — `internal/habit/habit.go` (streaks section)
+
+- [x] `CalculateStreak(completions, freqType)` — dispatches to daily/weekly streak calculators
+- [x] `dailyStreaks` — deduplicates to unique dates, counts consecutive days with 1-minute clock drift tolerance
+- [x] Current streak check: only active if last completion was today or yesterday (≤24h+1min gap from today)
+- [x] `weeklyStreaks` — deduplicates to unique ISO weeks, counts consecutive weeks
+- [x] `isConsecutiveWeek` — handles year boundary (week 52/53 → week 1)
+- [x] `CompletionRate` — completions/expected over configurable period, capped at 1.0
+- [x] 7 streak tests: empty, single day, consecutive 5-day, broken streak, past longest > current, expired (3 days ago), weekly
+
+**Logic audit — potential issues noted**:
+- [x] `dailyStreaks` clock drift tolerance of 1 minute (line 93): `diff <= 24*time.Hour+time.Minute`. This is comparing `time.Duration` between truncated dates (both at midnight). Two consecutive days truncated to midnight will always have exactly 24h difference, so the 1-min tolerance is harmless but unnecessary for truncated dates. No bug.
+- [x] `uniqueWeeks` uses a map for dedup but returns a slice — order depends on iteration order of completions (not map). Since completions are pre-sorted ascending, the weeks slice will be in order. Correct.
+- [x] `isConsecutiveWeek` year boundary: checks `w1 >= 52` for the last week. ISO weeks can be 52 or 53. The check `w1 >= 52` correctly handles both. ✅
+- [x] `CompletionRate` for weekly: `weeks := days / 7` with integer division. For `days=30`, this gives 4 weeks. 30 days is actually ~4.3 weeks, so this slightly overestimates the rate. Acceptable approximation.
+
+### M3.4: CLI Commands — `internal/cli/habits.go` (315 lines, new)
+
+- [x] `bt habit add` — creates habit with `--freq daily/weekly`, `--target N`, `--rrule` override, priority/energy/tags/context
+- [x] Auto-generates RRULE from `--freq` if not explicitly provided
+- [x] `bt habit log` — records completion with `--duration` and `--note`
+- [x] `bt habit stats` — displays streak info, completion rate, frequency
+- [x] `bt habit list` — lists all habits (filters by type=habit)
+- [x] All commands support `--json` and `--quiet` modes
+- [x] `completeHabitIDs` — dynamic completion for habit-type tasks only
+- [x] Cobra aliases: `habit`/`h`/`habits`
+- [x] Flag completions: `--freq` (daily/weekly), `--priority`, `--energy`
+- [x] `//nolint:errcheck` on `RegisterFlagCompletionFunc` calls — intentional, matches convention
+
+### M3.3 + M3.6 continued: App Layer — `internal/app/app.go` (154 new lines)
+
+- [x] `AddHabit` — validates RRULE, creates task with type=habit, status=active, frequency struct
+- [x] `LogHabit` — validates task is habit type, appends to body, recalculates streaks, writes to disk, logs to SQLite
+- [x] `HabitStats` — parses completions from body, calculates streak + completion rate (30-day window)
+- [x] `ListHabits` — delegates to `Index.ListTasks` with type=habit filter
+- [x] `HabitOptions` struct — FreqType, FreqTarget, Recurrence, Priority, Energy, Tags, Context
+- [x] 7 app tests: AddHabit, AddHabitInvalidRRULE, LogHabit, LogHabitNonHabit, HabitStats, ListHabits
+
+**Logic audit**:
+- [x] `LogHabit` writes to both markdown body AND SQLite `habit_completions` table (dual storage). Source of truth is markdown body — streaks are recalculated from body on each log. Correct.
+- [x] `HabitStats` reads from body only (not SQLite), which is correct since body is source of truth.
+- [x] Streak values cached in frontmatter (`streak_current`, `streak_longest`) via `task.StreakCurrent`/`task.StreakLongest`. Updated on each log.
+
+### Store Layer — `internal/store/` (67 new lines)
+
+- [x] `habit_completions` table: `(habit_id, completed_at, duration, note)` with PK on `(habit_id, completed_at)`
+- [x] `idx_habit_completions_date` index for fast date queries
+- [x] `LogHabitCompletion`, `HabitCompletions`, `HabitCompletionCount` methods
+- [x] `habit_completions` included in `RebuildIndex` clear loop ✅ (learned from FTS5 bug)
+
+### Model Changes — `internal/model/task.go`
+
+- [x] `HabitFrequency` struct: `Type` (daily/weekly) + `Target` (int)
+- [x] `Frequency *HabitFrequency` field on Task with `yaml:"frequency,omitempty"`
+- [x] `StreakCurrent int` and `StreakLongest int` with `yaml:"streak_current,omitempty"` / `streak_longest,omitempty"`
+- [x] These were already partially defined (HabitFrequency, RoutineStep, etc.) — habit fields now actually used
+
+### Integration Tests — 9 new tests
+
+- [x] `TestIntegrationHabitAddAndList` — add + list lifecycle
+- [x] `TestIntegrationHabitAddJSON` — JSON output with correct type/status
+- [x] `TestIntegrationHabitLog` — log with duration + note
+- [x] `TestIntegrationHabitLogJSON` — JSON output after log
+- [x] `TestIntegrationHabitStats` — stats display with streaks
+- [x] `TestIntegrationHabitStatsJSON` — JSON stats with all fields, total_completions=2
+- [x] `TestIntegrationHabitLogNonHabit` — rejects non-habit task
+- [x] `TestIntegrationHabitListEmpty` — shows hint message
+- [x] `TestIntegrationHabitWeekly` — weekly frequency creation
+
+### Tracking Docs
+
+- [x] `docs/ROADMAP.md`: M3.1–M3.7 all checked ✅
+- [x] `docs/handoff/CURRENT.md`: Points to M4 (Routines & Links), session 5 summary accurate, package list updated with `recurrence/` and `habit/`
+- [x] Supervisor log: Previous reviews (M2.10-12 + bug fix) included in commit ✅
+
+### Issues Found
+
+**⚠️ Pre-existing: `cmd.Println` / quiet mode output goes to stderr, not stdout**
+
+All `cmd.Println()` calls (across ALL commands, not just habits) output to stderr when running in a real shell. This is because Cobra's default `OutOrStdout()` returns stderr when no explicit output is set. Integration tests pass because `executeCmdInDir` calls `rootCmd.SetOut(buf)`.
+
+This means shell piping like `bt add -q | xargs bt done` doesn't work. **This is a pre-existing issue from M2**, not introduced in M3.
+
+**Severity**: Low-medium. Affects shell piping/scripting but not interactive use.
+**Fix**: Add `rootCmd.SetOut(os.Stdout)` in `root.go` init or `Execute()`.
+
+**⚠️ Minor: `RebuildIndex` doesn't repopulate `habit_completions` from markdown bodies**
+
+`RebuildIndex` clears `habit_completions` (good), but the `WalkDir` loop only calls `UpsertTask` which doesn't parse completions from the body. After a rebuild, the `habit_completions` table is empty even though the markdown bodies contain `## Completions` sections.
+
+This is acceptable because: (a) `HabitStats` reads from markdown body (source of truth), not from SQLite, and (b) `habit_completions` is documented as a cache. But if anything ever uses `HabitCompletions()` or `HabitCompletionCount()` after a rebuild, it'll get wrong results.
+
+**Severity**: Low. Stats work correctly; only the SQLite cache is stale after rebuild.
+
+**Verdict**: **APPROVED** ✅
+
+M3 is complete. Solid architecture with dual-storage (markdown SOT + SQLite cache), clean separation of concerns across 3 new packages, 46 new tests, and proper handling of the streaks/recurrence domain. No blocking issues.
+
+---
+
 ## [2026-04-07] Review: Bug Fix — ListTasks/Search Not Loading Tags/Contexts
 
 **Reviewed by**: Supervisor Agent
