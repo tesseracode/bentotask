@@ -829,3 +829,44 @@ func TestIntegrationHabitWeekly(t *testing.T) {
 		t.Errorf("type = %q, want habit", result.Type)
 	}
 }
+
+func TestIntegrationRebuildPreservesHabitCompletions(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Create a habit
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "-q", "Rebuild habit")
+	if err != nil {
+		t.Fatalf("habit add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	// Log two completions
+	_, err = executeCmdInDir(t, dataDir, "habit", "log", id, "--duration", "30", "-n", "Morning")
+	if err != nil {
+		t.Fatalf("habit log 1 error: %v", err)
+	}
+	_, err = executeCmdInDir(t, dataDir, "habit", "log", id, "--duration", "20")
+	if err != nil {
+		t.Fatalf("habit log 2 error: %v", err)
+	}
+
+	// Rebuild the index
+	out, err = executeCmdInDir(t, dataDir, "index", "rebuild")
+	if err != nil {
+		t.Fatalf("index rebuild error: %v\noutput: %s", err, out)
+	}
+
+	// Stats should still show 2 completions (from body, which is SOT)
+	out, err = executeCmdInDir(t, dataDir, "habit", "stats", "--json", id)
+	if err != nil {
+		t.Fatalf("habit stats error: %v\noutput: %s", err, out)
+	}
+
+	var stats map[string]any
+	if err := json.Unmarshal([]byte(out), &stats); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if stats["total_completions"].(float64) != 2 {
+		t.Errorf("total_completions after rebuild = %v, want 2", stats["total_completions"])
+	}
+}

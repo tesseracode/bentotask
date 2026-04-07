@@ -458,6 +458,73 @@ func TestSearchAfterDelete(t *testing.T) {
 	}
 }
 
+func TestRebuildIndexRepopulatesHabitCompletions(t *testing.T) {
+	idx := openTestIndex(t)
+	dataDir := t.TempDir()
+
+	now := time.Date(2026, 4, 5, 10, 0, 0, 0, time.UTC)
+
+	// Create a habit task with completions in the body (source of truth)
+	habit := &model.Task{
+		ID:     "01HABREB001",
+		Title:  "Exercise",
+		Type:   model.TaskTypeHabit,
+		Status: model.StatusActive,
+		Frequency: &model.HabitFrequency{
+			Type:   "daily",
+			Target: 1,
+		},
+		Recurrence: "FREQ=DAILY",
+		Created:    now,
+		Updated:    now,
+		Body: "## Completions\n" +
+			"- 2026-04-03T08:00:00Z | 30min | Morning run\n" +
+			"- 2026-04-04T09:15:00Z | 25min\n" +
+			"- 2026-04-05T07:45:00Z | 20min | Short jog\n",
+	}
+	_ = WriteFile(filepath.Join(dataDir, "inbox", "01HABREB001.md"), habit)
+
+	// Also add a regular task (should not cause completion issues)
+	regular := &model.Task{
+		ID: "01HABREB002", Title: "Regular task", Type: model.TaskTypeOneShot,
+		Status: model.StatusPending, Created: now, Updated: now,
+	}
+	_ = WriteFile(filepath.Join(dataDir, "inbox", "01HABREB002.md"), regular)
+
+	// Rebuild index
+	count, err := idx.RebuildIndex(dataDir)
+	if err != nil {
+		t.Fatalf("RebuildIndex() error: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("RebuildIndex() indexed %d files, want 2", count)
+	}
+
+	// Verify habit_completions were repopulated from the markdown body
+	completionCount, err := idx.HabitCompletionCount("01HABREB001")
+	if err != nil {
+		t.Fatalf("HabitCompletionCount() error: %v", err)
+	}
+	if completionCount != 3 {
+		t.Errorf("HabitCompletionCount after rebuild = %d, want 3", completionCount)
+	}
+
+	// Verify the completions themselves
+	completions, err := idx.HabitCompletions("01HABREB001")
+	if err != nil {
+		t.Fatalf("HabitCompletions() error: %v", err)
+	}
+	if len(completions) != 3 {
+		t.Errorf("HabitCompletions after rebuild = %d, want 3", len(completions))
+	}
+
+	// Regular task should have no completions
+	regularCount, _ := idx.HabitCompletionCount("01HABREB002")
+	if regularCount != 0 {
+		t.Errorf("Regular task should have 0 completions, got %d", regularCount)
+	}
+}
+
 func TestSearchAfterUpdate(t *testing.T) {
 	idx := openTestIndex(t)
 

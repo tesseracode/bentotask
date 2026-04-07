@@ -2,6 +2,8 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/tesserabox/bentotask/internal/style"
@@ -36,6 +38,10 @@ Get started:
 }
 
 func init() {
+	// Cobra defaults cmd.Print/Println to stderr. Force stdout so shell
+	// piping (bt list | grep ...) works correctly.
+	rootCmd.SetOut(os.Stdout)
+
 	// Global flags (available on every command)
 	rootCmd.PersistentFlags().Bool("json", false, "Output as JSON")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Output only IDs (for piping)")

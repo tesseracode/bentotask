@@ -18,6 +18,7 @@ import (
 
 	_ "modernc.org/sqlite" // Pure Go SQLite driver
 
+	"github.com/tesserabox/bentotask/internal/habit"
 	"github.com/tesserabox/bentotask/internal/model"
 )
 
@@ -335,7 +336,7 @@ func (idx *Index) Search(query string) ([]*IndexedTask, error) {
 // LogHabitCompletion inserts a completion record for a habit.
 func (idx *Index) LogHabitCompletion(habitID string, completedAt time.Time, duration int, note string) error {
 	_, err := idx.db.Exec(`
-		INSERT INTO habit_completions (habit_id, completed_at, duration, note)
+		INSERT OR REPLACE INTO habit_completions (habit_id, completed_at, duration, note)
 		VALUES (?, ?, ?, ?)`,
 		habitID,
 		completedAt.UTC().Format("2006-01-02T15:04:05Z"),
@@ -423,6 +424,16 @@ func (idx *Index) RebuildIndex(dataDir string) (int, error) {
 		if err := idx.UpsertTask(task, relPath); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: indexing %s: %v\n", path, err)
 			return nil
+		}
+
+		// Repopulate habit_completions from the markdown body (source of truth)
+		if task.Type == model.TaskTypeHabit && task.Body != "" {
+			completions := habit.ParseCompletionsFromBody(task.Body)
+			for _, c := range completions {
+				if err := idx.LogHabitCompletion(task.ID, c.CompletedAt, c.Duration, c.Note); err != nil {
+					fmt.Fprintf(os.Stderr, "warning: indexing completion for %s: %v\n", task.ID, err)
+				}
+			}
 		}
 
 		count++

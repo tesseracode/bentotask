@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"os"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestExecute(t *testing.T) {
 	}
 
 	// Reset for other tests
-	rootCmd.SetOut(nil)
+	rootCmd.SetOut(os.Stdout)
 	rootCmd.SetArgs(nil)
 }
 
@@ -43,7 +44,7 @@ func TestVersionCommand(t *testing.T) {
 	}
 
 	// Reset for other tests
-	rootCmd.SetOut(nil)
+	rootCmd.SetOut(os.Stdout)
 	rootCmd.SetArgs(nil)
 }
 
@@ -55,5 +56,19 @@ func TestRootHasGlobalFlags(t *testing.T) {
 		if f == nil {
 			t.Errorf("expected global flag --%s to exist", name)
 		}
+	}
+}
+
+func TestRootOutputDefaultsToStdout(t *testing.T) {
+	// Cobra defaults to stderr when no writer is set. We override this
+	// in init() with SetOut(os.Stdout) so shell piping works correctly.
+	// Verify the default writer is stdout, not stderr.
+	writer := rootCmd.OutOrStdout()
+	if writer == os.Stderr {
+		t.Error("rootCmd output writer should NOT be stderr — piping will break")
+	}
+	// After init(), the writer should be os.Stdout (we set it explicitly)
+	if writer != os.Stdout {
+		t.Error("rootCmd output writer should be os.Stdout")
 	}
 }
