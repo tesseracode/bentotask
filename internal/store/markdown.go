@@ -100,6 +100,10 @@ func WriteFile(path string, task *model.Task) error {
 	// Atomic write: write to temp file, then rename.
 	// This prevents corruption if the process crashes mid-write.
 	// os.Rename is atomic on POSIX systems (same filesystem).
+	//
+	// TODO: The temp file name is deterministic per target path. If we ever
+	// support concurrent writes (e.g., multi-device sync), use a random
+	// suffix or os.CreateTemp to avoid races on the temp path.
 	tmpPath := filepath.Join(dir, ".tmp-write-"+filepath.Base(path))
 
 	if err := os.WriteFile(tmpPath, data, 0o644); err != nil {
