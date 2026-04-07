@@ -143,6 +143,14 @@ func (a *App) ListTasks(f *store.TaskFilter) ([]*store.IndexedTask, error) {
 	return a.Index.ListTasks(f)
 }
 
+// SearchTasks performs a full-text search across task titles and bodies.
+func (a *App) SearchTasks(query string) ([]*store.IndexedTask, error) {
+	if query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
+	return a.Index.Search(query)
+}
+
 // GetTask retrieves a single task by exact ID or prefix.
 // If a prefix matches exactly one task, it returns that task.
 func (a *App) GetTask(idOrPrefix string) (*model.Task, string, error) {

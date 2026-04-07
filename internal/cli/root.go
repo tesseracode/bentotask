@@ -3,6 +3,8 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/tesserabox/bentotask/internal/style"
 )
 
 // version is set at build time via -ldflags.
@@ -26,6 +28,11 @@ Get started:
 	Version:       version,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+		if noColor, _ := cmd.Flags().GetBool("no-color"); noColor {
+			style.DisableColor()
+		}
+	},
 }
 
 func init() {

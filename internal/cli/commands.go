@@ -12,6 +12,7 @@ import (
 	"github.com/tesserabox/bentotask/internal/app"
 	"github.com/tesserabox/bentotask/internal/model"
 	"github.com/tesserabox/bentotask/internal/store"
+	"github.com/tesserabox/bentotask/internal/style"
 )
 
 func init() {
@@ -29,6 +30,7 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(doneCmd)
+	rootCmd.AddCommand(searchCmd)
 
 	// --- Flags ---
 
@@ -143,7 +145,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	cmd.Printf("✓ Created task %s\n  %s\n", task.ShortID(8), task.Title)
+	cmd.Printf("%s %s\n  %s\n", style.Success("Created task"), style.Bold(task.ShortID(8)), task.Title)
 	return nil
 }
 
@@ -206,24 +208,26 @@ func runList(cmd *cobra.Command, _ []string) error {
 	}
 
 	if len(tasks) == 0 {
-		cmd.Println("No tasks found.")
+		cmd.Println(style.Dim("No tasks found."))
 		return nil
 	}
 
-	// Simple table output
-	cmd.Printf("%-10s %-30s %-8s %-8s %s\n", "ID", "TITLE", "STATUS", "PRIORITY", "DUE")
+	// Table header
+	cmd.Printf("%-10s %-30s %-12s %-10s %s\n",
+		style.Bold("ID"), style.Bold("TITLE"), style.Bold("STATUS"),
+		style.Bold("PRIORITY"), style.Bold("DUE"))
 	for _, t := range tasks {
 		title := t.Title
 		if len(title) > 28 {
 			title = title[:27] + "…"
 		}
 
-		priority := "-"
+		priority := style.Dim("-")
 		if t.Priority != nil {
-			priority = *t.Priority
+			priority = style.Priority(*t.Priority)
 		}
 
-		due := "-"
+		due := style.Dim("-")
 		if t.DueDate != nil {
 			due = *t.DueDate
 		} else if t.DueEnd != nil {
@@ -235,7 +239,20 @@ func runList(cmd *cobra.Command, _ []string) error {
 			shortID = shortID[:8]
 		}
 
-		cmd.Printf("%-10s %-30s %-8s %-8s %s\n", shortID, title, t.Status, priority, due)
+		status := style.Status(t.Status)
+
+		// Show tags inline if present
+		tagStr := ""
+		if len(t.Tags) > 0 {
+			styledTags := make([]string, len(t.Tags))
+			for i, tag := range t.Tags {
+				styledTags[i] = style.Tag(tag)
+			}
+			tagStr = " " + strings.Join(styledTags, " ")
+		}
+
+		cmd.Printf("%-10s %-30s %-12s %-10s %s%s\n",
+			style.Dim(shortID), title, status, priority, due, tagStr)
 	}
 
 	return nil
@@ -275,7 +292,7 @@ func runDone(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	cmd.Printf("✓ Completed: %s\n", task.Title)
+	cmd.Printf("%s %s\n", style.Success("Completed:"), task.Title)
 	return nil
 }
 
@@ -297,15 +314,15 @@ var taskShowCmd = &cobra.Command{
 			return err
 		}
 
-		cmd.Printf("ID:       %s\n", task.ID)
-		cmd.Printf("Title:    %s\n", task.Title)
-		cmd.Printf("Type:     %s\n", task.Type)
-		cmd.Printf("Status:   %s\n", task.Status)
+		cmd.Printf("ID:       %s\n", style.Dim(task.ID))
+		cmd.Printf("Title:    %s\n", style.Bold(task.Title))
+		cmd.Printf("Type:     %s\n", string(task.Type))
+		cmd.Printf("Status:   %s\n", style.Status(string(task.Status)))
 		if task.Priority != "" {
-			cmd.Printf("Priority: %s\n", task.Priority)
+			cmd.Printf("Priority: %s\n", style.Priority(string(task.Priority)))
 		}
 		if task.Energy != "" {
-			cmd.Printf("Energy:   %s\n", task.Energy)
+			cmd.Printf("Energy:   %s\n", style.Energy(string(task.Energy)))
 		}
 		if task.EstimatedDuration > 0 {
 			cmd.Printf("Duration: ~%d min\n", task.EstimatedDuration)
@@ -317,7 +334,11 @@ var taskShowCmd = &cobra.Command{
 			cmd.Printf("Due:      %s – %s\n", task.DueStart, task.DueEnd)
 		}
 		if len(task.Tags) > 0 {
-			cmd.Printf("Tags:     %s\n", strings.Join(task.Tags, ", "))
+			styledTags := make([]string, len(task.Tags))
+			for i, tag := range task.Tags {
+				styledTags[i] = style.Tag(tag)
+			}
+			cmd.Printf("Tags:     %s\n", strings.Join(styledTags, " "))
 		}
 		if len(task.Context) > 0 {
 			cmd.Printf("Context:  %s\n", strings.Join(task.Context, ", "))
@@ -325,9 +346,9 @@ var taskShowCmd = &cobra.Command{
 		if task.Box != "" {
 			cmd.Printf("Box:      %s\n", task.Box)
 		}
-		cmd.Printf("File:     %s\n", relPath)
-		cmd.Printf("Created:  %s\n", task.Created.Format("2006-01-02 15:04"))
-		cmd.Printf("Updated:  %s\n", task.Updated.Format("2006-01-02 15:04"))
+		cmd.Printf("File:     %s\n", style.Dim(relPath))
+		cmd.Printf("Created:  %s\n", style.Dim(task.Created.Format("2006-01-02 15:04")))
+		cmd.Printf("Updated:  %s\n", style.Dim(task.Updated.Format("2006-01-02 15:04")))
 		if task.CompletedAt != nil {
 			cmd.Printf("Done:     %s\n", task.CompletedAt.Format("2006-01-02 15:04"))
 		}
@@ -433,7 +454,7 @@ func editWithFlags(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
 		return nil
 	}
 
-	cmd.Printf("✓ Updated: %s\n", task.Title)
+	cmd.Printf("%s %s\n", style.Success("Updated:"), task.Title)
 	return nil
 }
 
@@ -469,7 +490,7 @@ func editWithEditor(cmd *cobra.Command, a *app.App, idOrPrefix string) error {
 		return nil
 	}
 
-	cmd.Printf("✓ Updated: %s\n", task.Title)
+	cmd.Printf("%s %s\n", style.Success("Updated:"), task.Title)
 	return nil
 }
 
@@ -507,7 +528,7 @@ var taskDeleteCmd = &cobra.Command{
 			return nil
 		}
 
-		cmd.Printf("✓ Deleted: %s\n", task.Title)
+		cmd.Printf("%s %s\n", style.Success("Deleted:"), task.Title)
 		return nil
 	},
 }
@@ -539,7 +560,76 @@ var indexRebuildCmd = &cobra.Command{
 			return err
 		}
 
-		cmd.Printf("✓ Rebuilt index: %d tasks indexed\n", count)
+		cmd.Printf("%s %d tasks indexed\n", style.Success("Rebuilt index:"), count)
+		return nil
+	},
+}
+
+// --- bt search ---
+
+var searchCmd = &cobra.Command{
+	Use:   "search <query>",
+	Short: "Search tasks by title or body text",
+	Long: `Full-text search across task titles and body content.
+Uses SQLite FTS5 for fast matching. Results ranked by relevance.
+
+Examples:
+  bt search groceries           Find tasks mentioning "groceries"
+  bt search "project plan"      Search for a phrase`,
+	Args: cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		a, err := openApp(cmd)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = a.Close() }()
+
+		query := strings.Join(args, " ")
+		tasks, err := a.SearchTasks(query)
+		if err != nil {
+			return err
+		}
+
+		quiet, _ := cmd.Flags().GetBool("quiet")
+		if quiet {
+			for _, t := range tasks {
+				cmd.Println(t.ID)
+			}
+			return nil
+		}
+
+		if len(tasks) == 0 {
+			cmd.Printf("%s %q\n", style.Dim("No results for"), query)
+			return nil
+		}
+
+		cmd.Printf("%s %q (%d results)\n\n",
+			style.Bold("Search:"), query, len(tasks))
+
+		for _, t := range tasks {
+			shortID := t.ID
+			if len(shortID) > 8 {
+				shortID = shortID[:8]
+			}
+
+			priority := ""
+			if t.Priority != nil {
+				priority = " " + style.Priority(*t.Priority)
+			}
+
+			tagStr := ""
+			if len(t.Tags) > 0 {
+				styledTags := make([]string, len(t.Tags))
+				for i, tag := range t.Tags {
+					styledTags[i] = style.Tag(tag)
+				}
+				tagStr = " " + strings.Join(styledTags, " ")
+			}
+
+			cmd.Printf("  %s  %s  %s%s%s\n",
+				style.Dim(shortID), style.Status(t.Status), t.Title, priority, tagStr)
+		}
+
 		return nil
 	},
 }

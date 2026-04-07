@@ -58,4 +58,12 @@ CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
 CREATE INDEX IF NOT EXISTS idx_task_tags_tag        ON task_tags(tag);
 CREATE INDEX IF NOT EXISTS idx_task_contexts_ctx    ON task_contexts(context);
 CREATE INDEX IF NOT EXISTS idx_task_links_target    ON task_links(target_id);
+
+-- Full-text search (ADR-002 §5)
+-- Standalone FTS table (not content-synced) — we populate it manually.
+CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(
+    id UNINDEXED,
+    title,
+    body
+);
 `

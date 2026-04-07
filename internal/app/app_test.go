@@ -316,3 +316,31 @@ func TestRebuildIndex(t *testing.T) {
 		t.Errorf("RebuildIndex() indexed %d, want 2", count)
 	}
 }
+
+func TestSearchTasks(t *testing.T) {
+	a := openTestApp(t)
+
+	_, _ = a.AddTask("Buy groceries at the store", TaskOptions{Tags: []string{"errands"}})
+	_, _ = a.AddTask("Write quarterly report", TaskOptions{Tags: []string{"work"}})
+	_, _ = a.AddTask("Clean the kitchen", TaskOptions{Tags: []string{"home"}})
+
+	results, err := a.SearchTasks("groceries")
+	if err != nil {
+		t.Fatalf("SearchTasks() error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("SearchTasks('groceries') = %d results, want 1", len(results))
+	}
+	if len(results) > 0 && results[0].Title != "Buy groceries at the store" {
+		t.Errorf("SearchTasks title = %q, want %q", results[0].Title, "Buy groceries at the store")
+	}
+}
+
+func TestSearchTasksEmptyQuery(t *testing.T) {
+	a := openTestApp(t)
+
+	_, err := a.SearchTasks("")
+	if err == nil {
+		t.Error("SearchTasks('') should return error")
+	}
+}

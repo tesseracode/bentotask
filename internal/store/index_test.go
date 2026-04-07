@@ -351,3 +351,123 @@ func TestGetTaskNotFound(t *testing.T) {
 		t.Error("GetTask(nonexistent) should return error")
 	}
 }
+
+func TestSearchByTitle(t *testing.T) {
+	idx := openTestIndex(t)
+
+	task1 := makeTestTask("01SRCH0001", "Buy groceries for dinner")
+	task1.Body = "Need milk, eggs, and bread"
+	_ = idx.UpsertTask(task1, "inbox/01SRCH0001.md")
+
+	task2 := makeTestTask("01SRCH0002", "Write project report")
+	task2.Body = "Quarterly status update for management"
+	_ = idx.UpsertTask(task2, "inbox/01SRCH0002.md")
+
+	task3 := makeTestTask("01SRCH0003", "Plan grocery list")
+	task3.Body = "Weekly shopping needs"
+	_ = idx.UpsertTask(task3, "inbox/01SRCH0003.md")
+
+	// Search by title word
+	results, err := idx.Search("groceries")
+	if err != nil {
+		t.Fatalf("Search('groceries') error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("Search('groceries') returned %d results, want 1", len(results))
+	}
+	if len(results) > 0 && results[0].ID != "01SRCH0001" {
+		t.Errorf("Search('groceries') returned %q, want 01SRCH0001", results[0].ID)
+	}
+}
+
+func TestSearchByBody(t *testing.T) {
+	idx := openTestIndex(t)
+
+	task1 := makeTestTask("01BODY0001", "Daily standup")
+	task1.Body = "Discuss blockers and progress with the engineering team"
+	_ = idx.UpsertTask(task1, "inbox/01BODY0001.md")
+
+	task2 := makeTestTask("01BODY0002", "Lunch meeting")
+	task2.Body = "Meet with sales team at noon"
+	_ = idx.UpsertTask(task2, "inbox/01BODY0002.md")
+
+	// Search by body content
+	results, err := idx.Search("blockers")
+	if err != nil {
+		t.Fatalf("Search('blockers') error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("Search('blockers') returned %d results, want 1", len(results))
+	}
+	if len(results) > 0 && results[0].ID != "01BODY0001" {
+		t.Errorf("Search('blockers') returned %q, want 01BODY0001", results[0].ID)
+	}
+}
+
+func TestSearchNoResults(t *testing.T) {
+	idx := openTestIndex(t)
+
+	task := makeTestTask("01NORES001", "Simple task")
+	task.Body = "Nothing special here"
+	_ = idx.UpsertTask(task, "inbox/01NORES001.md")
+
+	results, err := idx.Search("nonexistentword")
+	if err != nil {
+		t.Fatalf("Search('nonexistentword') error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("Search('nonexistentword') returned %d results, want 0", len(results))
+	}
+}
+
+func TestSearchAfterDelete(t *testing.T) {
+	idx := openTestIndex(t)
+
+	task := makeTestTask("01SRDEL001", "Searchable task to delete")
+	task.Body = "This task has unique content xylophone"
+	_ = idx.UpsertTask(task, "inbox/01SRDEL001.md")
+
+	// Should find it
+	results, _ := idx.Search("xylophone")
+	if len(results) != 1 {
+		t.Fatalf("Search before delete returned %d results, want 1", len(results))
+	}
+
+	// Delete and search again
+	_ = idx.DeleteTask("01SRDEL001")
+	results, err := idx.Search("xylophone")
+	if err != nil {
+		t.Fatalf("Search after delete error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("Search after delete returned %d results, want 0", len(results))
+	}
+}
+
+func TestSearchAfterUpdate(t *testing.T) {
+	idx := openTestIndex(t)
+
+	task := makeTestTask("01SRUPD001", "Original title")
+	task.Body = "Original body with keyword alpha"
+	_ = idx.UpsertTask(task, "inbox/01SRUPD001.md")
+
+	// Update the task — FTS should reflect new content
+	task.Title = "Updated title"
+	task.Body = "New body with keyword bravo"
+	_ = idx.UpsertTask(task, "inbox/01SRUPD001.md")
+
+	// Old keyword should not match
+	results, _ := idx.Search("alpha")
+	if len(results) != 0 {
+		t.Errorf("Search('alpha') after update returned %d results, want 0", len(results))
+	}
+
+	// New keyword should match
+	results, err := idx.Search("bravo")
+	if err != nil {
+		t.Fatalf("Search('bravo') error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("Search('bravo') after update returned %d results, want 1", len(results))
+	}
+}

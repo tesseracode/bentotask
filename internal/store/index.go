@@ -141,11 +141,21 @@ func (idx *Index) UpsertTask(task *model.Task, filePath string) error {
 		}
 	}
 
+	// Upsert FTS entry
+	if _, err := tx.Exec("DELETE FROM tasks_fts WHERE id = ?", task.ID); err != nil {
+		return fmt.Errorf("clear fts: %w", err)
+	}
+	if _, err := tx.Exec("INSERT INTO tasks_fts (id, title, body) VALUES (?, ?, ?)",
+		task.ID, task.Title, task.Body); err != nil {
+		return fmt.Errorf("insert fts: %w", err)
+	}
+
 	return tx.Commit()
 }
 
 // DeleteTask removes a task and its related data from the index.
 func (idx *Index) DeleteTask(id string) error {
+	_, _ = idx.db.Exec("DELETE FROM tasks_fts WHERE id = ?", id)
 	_, err := idx.db.Exec("DELETE FROM tasks WHERE id = ?", id)
 	return err
 }
@@ -267,10 +277,29 @@ func (idx *Index) TaskCount() (int, error) {
 	return count, err
 }
 
+// Search performs a full-text search across task titles and bodies.
+// Uses SQLite FTS5 for fast matching. Returns tasks ranked by relevance.
+func (idx *Index) Search(query string) ([]*IndexedTask, error) {
+	rows, err := idx.db.Query(`
+		SELECT t.id, t.title, t.type, t.status, t.priority, t.energy,
+			t.estimated_duration, t.due_date, t.due_start, t.due_end, t.box,
+			t.recurrence, t.completed_at, t.created_at, t.updated_at, t.file_path
+		FROM tasks_fts fts
+		JOIN tasks t ON fts.id = t.id
+		WHERE tasks_fts MATCH ?
+		ORDER BY rank`, query)
+	if err != nil {
+		return nil, fmt.Errorf("search: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return collectTasks(rows)
+}
+
 // RebuildIndex drops all data and re-indexes every .md file under dataDir.
 func (idx *Index) RebuildIndex(dataDir string) (int, error) {
 	// Clear existing data
-	for _, table := range []string{"task_links", "task_contexts", "task_tags", "tasks"} {
+	for _, table := range []string{"task_links", "task_contexts", "task_tags", "tasks", "tasks_fts"} {
 		if _, err := idx.db.Exec("DELETE FROM " + table); err != nil {
 			return 0, fmt.Errorf("clear %s: %w", table, err)
 		}

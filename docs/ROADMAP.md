@@ -50,8 +50,8 @@
 - [x] M2.5 — `bt edit` — modify existing task
 - [x] M2.6 — `bt delete` — remove task
 - [x] M2.7 — `bt show <id>` — display task details
-- [ ] M2.8 — Tags, priority, energy level support
-- [ ] M2.9 — Search and filtering (by tag, priority, status, box)
+- [x] M2.8 — Tags, priority, energy level support
+- [x] M2.9 — Search and filtering (by tag, priority, status, box)
 - [ ] M2.10 — Tab completion (bash, zsh, fish)
 - [ ] M2.11 — Integration tests for CLI commands
 - [ ] M2.12 — `--json` output mode for all commands
