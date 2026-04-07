@@ -81,7 +81,7 @@ func (t *Task) Validate() []string {
 		if link.Target == "" {
 			errs = append(errs, fmt.Sprintf("link[%d]: target is required", i))
 		}
-		if !isValidLinkType(link.Type) {
+		if !IsValidLinkType(link.Type) {
 			errs = append(errs, fmt.Sprintf("link[%d]: invalid type: %q", i, link.Type))
 		}
 	}
@@ -166,7 +166,8 @@ func isValidEnergy(e Energy) bool {
 	return false
 }
 
-func isValidLinkType(lt LinkType) bool {
+// IsValidLinkType returns true if the given link type is a known valid value.
+func IsValidLinkType(lt LinkType) bool {
 	switch lt {
 	case LinkDependsOn, LinkBlocks, LinkRelatedTo:
 		return true

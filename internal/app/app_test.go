@@ -619,6 +619,18 @@ func TestLinkTasksDependsOn(t *testing.T) {
 	}
 }
 
+func TestLinkTasksInvalidType(t *testing.T) {
+	a := openTestApp(t)
+
+	taskA, _ := a.AddTask("Task A", TaskOptions{})
+	taskB, _ := a.AddTask("Task B", TaskOptions{})
+
+	_, _, err := a.LinkTasks(taskA.ID, taskB.ID, model.LinkType("garbage"))
+	if err == nil {
+		t.Error("invalid link type should return error")
+	}
+}
+
 func TestLinkTasksSelfLink(t *testing.T) {
 	a := openTestApp(t)
 

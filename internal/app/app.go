@@ -284,6 +284,11 @@ func (a *App) RebuildIndex() (int, error) {
 // LinkTasks creates a link between two tasks. It validates that both tasks exist,
 // the link type is valid, and the link doesn't create a dependency cycle.
 func (a *App) LinkTasks(sourceIDOrPrefix, targetIDOrPrefix string, linkType model.LinkType) (*model.Task, *model.Task, error) {
+	// Validate link type
+	if !model.IsValidLinkType(linkType) {
+		return nil, nil, fmt.Errorf("invalid link type: %q (valid: depends-on, blocks, related-to)", linkType)
+	}
+
 	// Resolve both tasks
 	source, sourceRel, err := a.GetTask(sourceIDOrPrefix)
 	if err != nil {
@@ -371,7 +376,7 @@ func (a *App) UnlinkTasks(sourceIDOrPrefix, targetIDOrPrefix string, linkType mo
 	return source, target, nil
 }
 
-// TaskLinks returns outgoing and incoming links for a task, with titles resolved.
+// TaskLinkInfo holds the resolved data for a single task link relationship.
 type TaskLinkInfo struct {
 	Type      model.LinkType
 	Direction string // "outgoing" or "incoming"
