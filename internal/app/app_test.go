@@ -344,3 +344,125 @@ func TestSearchTasksEmptyQuery(t *testing.T) {
 		t.Error("SearchTasks('') should return error")
 	}
 }
+
+// --- Habit tests ---
+
+func TestAddHabit(t *testing.T) {
+	a := openTestApp(t)
+
+	h, err := a.AddHabit("Read 30 minutes", HabitOptions{
+		FreqType:   "daily",
+		FreqTarget: 1,
+		Recurrence: "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("AddHabit() error: %v", err)
+	}
+	if h.Type != "habit" {
+		t.Errorf("Type = %q, want 'habit'", h.Type)
+	}
+	if h.Status != "active" {
+		t.Errorf("Status = %q, want 'active'", h.Status)
+	}
+	if h.Frequency == nil || h.Frequency.Type != "daily" {
+		t.Errorf("Frequency = %v, want daily", h.Frequency)
+	}
+	if h.Recurrence != "FREQ=DAILY" {
+		t.Errorf("Recurrence = %q, want 'FREQ=DAILY'", h.Recurrence)
+	}
+}
+
+func TestAddHabitInvalidRRULE(t *testing.T) {
+	a := openTestApp(t)
+
+	_, err := a.AddHabit("Bad habit", HabitOptions{
+		FreqType:   "daily",
+		FreqTarget: 1,
+		Recurrence: "INVALID",
+	})
+	if err == nil {
+		t.Error("AddHabit with invalid RRULE should return error")
+	}
+}
+
+func TestLogHabit(t *testing.T) {
+	a := openTestApp(t)
+
+	h, _ := a.AddHabit("Exercise", HabitOptions{
+		FreqType:   "daily",
+		FreqTarget: 1,
+		Recurrence: "FREQ=DAILY",
+	})
+
+	updated, err := a.LogHabit(h.ID, 30, "Morning run")
+	if err != nil {
+		t.Fatalf("LogHabit() error: %v", err)
+	}
+	if updated.StreakCurrent != 1 {
+		t.Errorf("StreakCurrent = %d, want 1", updated.StreakCurrent)
+	}
+	if !strings.Contains(updated.Body, "## Completions") {
+		t.Error("Body should contain ## Completions section")
+	}
+	if !strings.Contains(updated.Body, "30min") {
+		t.Error("Body should contain duration")
+	}
+	if !strings.Contains(updated.Body, "Morning run") {
+		t.Error("Body should contain note")
+	}
+}
+
+func TestLogHabitNonHabit(t *testing.T) {
+	a := openTestApp(t)
+
+	task, _ := a.AddTask("Regular task", TaskOptions{})
+	_, err := a.LogHabit(task.ID, 0, "")
+	if err == nil {
+		t.Error("LogHabit on non-habit should return error")
+	}
+}
+
+func TestHabitStats(t *testing.T) {
+	a := openTestApp(t)
+
+	h, _ := a.AddHabit("Meditate", HabitOptions{
+		FreqType:   "daily",
+		FreqTarget: 1,
+		Recurrence: "FREQ=DAILY",
+	})
+
+	// Log a completion
+	_, _ = a.LogHabit(h.ID, 20, "")
+
+	task, stats, err := a.HabitStats(h.ID)
+	if err != nil {
+		t.Fatalf("HabitStats() error: %v", err)
+	}
+	if task.Title != "Meditate" {
+		t.Errorf("Title = %q, want 'Meditate'", task.Title)
+	}
+	if stats.TotalCompletions != 1 {
+		t.Errorf("TotalCompletions = %d, want 1", stats.TotalCompletions)
+	}
+	if stats.CurrentStreak != 1 {
+		t.Errorf("CurrentStreak = %d, want 1", stats.CurrentStreak)
+	}
+}
+
+func TestListHabits(t *testing.T) {
+	a := openTestApp(t)
+
+	// Add a habit and a regular task
+	_, _ = a.AddHabit("Read", HabitOptions{
+		FreqType: "daily", FreqTarget: 1, Recurrence: "FREQ=DAILY",
+	})
+	_, _ = a.AddTask("Regular task", TaskOptions{})
+
+	habits, err := a.ListHabits()
+	if err != nil {
+		t.Fatalf("ListHabits() error: %v", err)
+	}
+	if len(habits) != 1 {
+		t.Errorf("ListHabits() = %d, want 1 (should only return habits)", len(habits))
+	}
+}

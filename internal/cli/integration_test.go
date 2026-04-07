@@ -46,6 +46,7 @@ func resetFlags() {
 		taskEditCmd,
 		searchCmd,
 		indexCmd, indexRebuildCmd,
+		habitCmd, habitAddCmd, habitLogCmd, habitStatsCmd, habitListCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -634,5 +635,197 @@ func TestIntegrationJSONListShowsTags(t *testing.T) {
 	}
 	if len(tagged.Contexts) != 1 || tagged.Contexts[0] != "office" {
 		t.Errorf("list --json contexts = %v, want [office]", tagged.Contexts)
+	}
+}
+
+// --- Habit integration tests ---
+
+func TestIntegrationHabitAddAndList(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "Read 30 minutes", "--freq", "daily")
+	if err != nil {
+		t.Fatalf("habit add error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Created habit") {
+		t.Errorf("habit add output should contain 'Created habit', got: %s", out)
+	}
+
+	// List habits
+	out, err = executeCmdInDir(t, dataDir, "habit", "list")
+	if err != nil {
+		t.Fatalf("habit list error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Read 30 minutes") {
+		t.Errorf("habit list should contain habit title, got: %s", out)
+	}
+}
+
+func TestIntegrationHabitAddJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "--json", "Meditate", "--freq", "daily", "--tag", "wellness")
+	if err != nil {
+		t.Fatalf("habit add --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result.Title != "Meditate" {
+		t.Errorf("JSON title = %q, want %q", result.Title, "Meditate")
+	}
+	if result.Type != "habit" {
+		t.Errorf("JSON type = %q, want %q", result.Type, "habit")
+	}
+	if result.Status != "active" {
+		t.Errorf("JSON status = %q, want %q", result.Status, "active")
+	}
+}
+
+func TestIntegrationHabitLog(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Create a habit
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "-q", "Exercise")
+	if err != nil {
+		t.Fatalf("habit add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	// Log a completion
+	out, err = executeCmdInDir(t, dataDir, "habit", "log", id, "--duration", "30", "-n", "Morning run")
+	if err != nil {
+		t.Fatalf("habit log error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Logged:") {
+		t.Errorf("habit log output should contain 'Logged:', got: %s", out)
+	}
+}
+
+func TestIntegrationHabitLogJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "-q", "Read")
+	if err != nil {
+		t.Fatalf("habit add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	out, err = executeCmdInDir(t, dataDir, "habit", "log", "--json", id, "--duration", "25")
+	if err != nil {
+		t.Fatalf("habit log --json error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result.Title != "Read" {
+		t.Errorf("JSON title = %q, want %q", result.Title, "Read")
+	}
+}
+
+func TestIntegrationHabitStats(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "-q", "Meditate")
+	if err != nil {
+		t.Fatalf("habit add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	// Log a completion
+	_, _ = executeCmdInDir(t, dataDir, "habit", "log", id)
+
+	// Get stats
+	out, err = executeCmdInDir(t, dataDir, "habit", "stats", id)
+	if err != nil {
+		t.Fatalf("habit stats error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "Meditate") {
+		t.Errorf("habit stats should contain title, got: %s", out)
+	}
+	if !strings.Contains(out, "Current streak") {
+		t.Errorf("habit stats should contain 'Current streak', got: %s", out)
+	}
+	if !strings.Contains(out, "Total completions") {
+		t.Errorf("habit stats should contain 'Total completions', got: %s", out)
+	}
+}
+
+func TestIntegrationHabitStatsJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "-q", "Exercise")
+	if err != nil {
+		t.Fatalf("habit add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	_, _ = executeCmdInDir(t, dataDir, "habit", "log", id)
+	_, _ = executeCmdInDir(t, dataDir, "habit", "log", id)
+
+	out, err = executeCmdInDir(t, dataDir, "habit", "stats", "--json", id)
+	if err != nil {
+		t.Fatalf("habit stats --json error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+	if result["title"] != "Exercise" {
+		t.Errorf("JSON title = %v, want Exercise", result["title"])
+	}
+	if result["total_completions"].(float64) != 2 {
+		t.Errorf("JSON total_completions = %v, want 2", result["total_completions"])
+	}
+}
+
+func TestIntegrationHabitLogNonHabit(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Create a regular task
+	out, err := executeCmdInDir(t, dataDir, "add", "-q", "Regular task")
+	if err != nil {
+		t.Fatalf("add error: %v", err)
+	}
+	id := strings.TrimSpace(out)
+
+	// Try to log — should fail
+	_, err = executeCmdInDir(t, dataDir, "habit", "log", id)
+	if err == nil {
+		t.Error("habit log on non-habit task should return error")
+	}
+}
+
+func TestIntegrationHabitListEmpty(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "list")
+	if err != nil {
+		t.Fatalf("habit list error: %v\noutput: %s", err, out)
+	}
+	if !strings.Contains(out, "No habits found") {
+		t.Errorf("empty habit list should show hint, got: %s", out)
+	}
+}
+
+func TestIntegrationHabitWeekly(t *testing.T) {
+	dataDir := t.TempDir()
+
+	out, err := executeCmdInDir(t, dataDir, "habit", "add", "--json", "Exercise", "--freq", "weekly", "--target", "3")
+	if err != nil {
+		t.Fatalf("habit add weekly error: %v\noutput: %s", err, out)
+	}
+
+	var result TaskJSON
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("failed to parse JSON: %v", err)
+	}
+	if result.Type != "habit" {
+		t.Errorf("type = %q, want habit", result.Type)
 	}
 }

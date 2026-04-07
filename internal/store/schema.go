@@ -59,6 +59,16 @@ CREATE INDEX IF NOT EXISTS idx_task_tags_tag        ON task_tags(tag);
 CREATE INDEX IF NOT EXISTS idx_task_contexts_ctx    ON task_contexts(context);
 CREATE INDEX IF NOT EXISTS idx_task_links_target    ON task_links(target_id);
 
+-- Habit completion history (ADR-002 §7)
+CREATE TABLE IF NOT EXISTS habit_completions (
+    habit_id     TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    completed_at TEXT NOT NULL,
+    duration     INTEGER,
+    note         TEXT,
+    PRIMARY KEY (habit_id, completed_at)
+);
+CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(completed_at);
+
 -- Full-text search (ADR-002 §5)
 -- Standalone FTS table (not content-synced) — we populate it manually.
 CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(

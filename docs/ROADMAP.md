@@ -61,13 +61,13 @@
 ## Milestone 3: Habits & Recurrence (Phase 2a)
 **Goal**: Habits can be tracked with streaks, tasks can recur.
 
-- [ ] M3.1 — Recurrence rule model (all patterns from spec)
-- [ ] M3.2 — Recurring task instance generation
-- [ ] M3.3 — Habit data model (extends task)
-- [ ] M3.4 — `bt habit add` / `bt habit log` / `bt habit stats`
-- [ ] M3.5 — Streak calculation engine
-- [ ] M3.6 — Habit completion history storage
-- [ ] M3.7 — Tests for recurrence and streak logic
+- [x] M3.1 — Recurrence rule model (all patterns from spec)
+- [x] M3.2 — Recurring task instance generation
+- [x] M3.3 — Habit data model (extends task)
+- [x] M3.4 — `bt habit add` / `bt habit log` / `bt habit stats`
+- [x] M3.5 — Streak calculation engine
+- [x] M3.6 — Habit completion history storage
+- [x] M3.7 — Tests for recurrence and streak logic
 
 ---
 

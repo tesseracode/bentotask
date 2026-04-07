@@ -4,6 +4,146 @@
 
 ---
 
+## [2026-04-07] Review: Bug Fix — ListTasks/Search Not Loading Tags/Contexts
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `a143c78` — Fix ListTasks/Search not loading tags and contexts from junction tables
+**Origin**: Bug found during M2.10-12 review (see below)
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `make test` — **116 tests PASS** (3 new: 2 store-level regression + 1 integration)
+- [x] Smoke: `bt add --tag work --tag urgent -c office --json` then `bt list --json` — tags and contexts now appear correctly in list output
+
+**Fix approach**: Promoted `collectTasks()` from a free function to an `Index` method so it can call `loadTags()`/`loadContexts()` per result. This applies to `ListTasks`, `FindByPrefix`, and `Search` — all three paths now return complete tag/context data.
+
+**Also fixed**: Removed inline `file_path` computation in `runAdd` JSON output, replaced with `a.GetTask(task.ID)` to match other commands (eliminates the minor divergence noted in previous review).
+
+**Tests added**:
+- Store: `TestListTasksFilterByTag` — now asserts `Tags` field populated on result
+- Store: `TestListTasksFilterByContext` — now asserts `Contexts` field populated on result
+- Integration: `TestIntegrationJSONListShowsTags` — end-to-end add-with-tags then list-json verification
+
+**Verdict**: **APPROVED** ✅ — clean, minimal fix with proper regression tests at both layers.
+
+---
+
+## [2026-04-07] Review: M2.10 + M2.11 + M2.12 — Tab Completions, Integration Tests, JSON Output
+
+**Reviewed by**: Supervisor Agent
+**Commit**: `b9da759` — M2.10+M2.11+M2.12: Add tab completions, integration tests, and --json output
+**Handoff claimed**: M2 COMPLETE — all 12 tasks done
+
+**Verification**:
+- [x] `go build ./...` — compiles cleanly
+- [x] `go vet ./...` — 0 issues
+- [x] `golangci-lint run ./...` — 0 issues
+- [x] `make test` — **113 tests PASS** across 5 packages (25 new integration tests)
+- [x] Smoke: `bt add --json` — valid JSON, correct fields, tags/contexts never null
+- [x] Smoke: `bt list --json` — valid JSON array
+- [x] Smoke: `bt done --json` — status=done, completed_at set
+- [x] Smoke: `bt search --json` — valid JSON array
+- [x] Smoke: `bt index rebuild --json` — `{"indexed": N}`
+- [x] Smoke: `bt completion --help` — shell completion subcommand available
+- [x] Tracking docs updated: ROADMAP (M2.10-12 checked), handoff (M3 next), session 4 summary
+
+### M2.10: Tab Completions — `internal/cli/completions.go` (165 lines, new)
+
+- [x] `registerCompletions()` called in `init()` — wires up all commands
+- [x] **Task ID completions**: `completeTaskIDs` → `App.CompleteTasks()` → `Index.ListTasks(nil)` — returns `ID\tTitle` format, filters out done/cancelled tasks
+- [x] **Dynamic flag completions**: `--tag` → `App.CompleteTags()` → `Index.DistinctTags()`, `--box` → `App.CompleteBoxes()` → `Index.DistinctBoxes()`
+- [x] **Static enum completions**: `--status` (6 values with descriptions), `--priority` (5 values), `--energy` (3 values), `--context` (4 fixed values)
+- [x] All completion functions return `cobra.ShellCompDirectiveNoFileComp` (no file fallback)
+- [x] Completions registered for paired commands: `taskAddCmd`+`addCmd`, `taskListCmd`+`listCmd`
+- [x] Edit command gets own `registerEditCompletions` with all enum flags
+
+**New index methods** (`index.go`, 34 new lines):
+- [x] `DistinctTags()`, `DistinctBoxes()`, `DistinctContexts()` — all use shared `distinctStrings()` helper
+- [x] `DistinctBoxes` correctly filters `NULL` and empty strings
+
+**New app methods** (`app.go`, 31 new lines):
+- [x] `CompleteTasks()`, `CompleteTags()`, `CompleteBoxes()`, `CompleteContexts()`
+
+### M2.11: Integration Tests — `internal/cli/integration_test.go` (601 lines, new)
+
+- [x] **25 end-to-end tests** covering full CLI flow through real Cobra execution
+- [x] `executeCmdInDir()` test helper — sets `--data-dir`, captures stdout, resets flags
+- [x] `resetFlags()` + `resetFlag()` — prevents Cobra global state leaks between tests (handles `StringSlice` via `pflag.SliceValue.Replace`)
+- [x] **CRUD lifecycle tests**: AddAndList, AddAndShow, AddAndDone, AddAndDelete, EditWithFlags
+- [x] **Search tests**: Search (finds match), SearchNoResults
+- [x] **Filter tests**: ListFilters (--tag, --priority — positive and negative assertions)
+- [x] **Output mode tests**: QuietMode (ULID length check), JSONAdd, JSONList, JSONShow, JSONSearch, JSONDone, JSONEmptyList, JSONNullSafety
+- [x] **Edge cases**: PrefixMatch (8-char prefix), NotFound (error returned), DoneAlreadyComplete (double-done error)
+- [x] **ADR-003 compliance**: NounVerb (`bt task add`), TaskAlias (`bt t add`), AddWithDueDate (auto-promotes to `dated` type)
+- [x] **JSON integrity**: Parses output with `json.Unmarshal`, verifies fields, checks `tags` is `[]` not `null`
+
+### M2.12: JSON Output — `internal/cli/json.go` (130 lines, new)
+
+- [x] `TaskJSON` struct — proper `json:"field_name"` tags, `omitempty` on optional fields
+- [x] `Tags`/`Contexts` fields: `[]string` without `omitempty` — enforces `[]` never `null`
+- [x] `taskToJSON()` — converts `model.Task` + `relPath` → `TaskJSON`, nil-safe slice init
+- [x] `indexedToJSON()` — converts `store.IndexedTask` → `TaskJSON`, handles `*string` pointers
+- [x] `writeJSON()` — `json.NewEncoder` with `SetIndent("", "  ")` for readable output
+- [x] `isJSON(cmd)` helper in `commands.go` — reads global `--json` flag
+
+**JSON integrated into all commands** (`commands.go`, 60 new lines):
+- [x] `runAdd` — returns single `TaskJSON`
+- [x] `runList` — returns `[]TaskJSON` array
+- [x] `taskShowCmd` — returns single `TaskJSON` with body
+- [x] `runDone` — returns single `TaskJSON` with status=done + completed_at
+- [x] `editWithFlags` / `editWithEditor` — returns single `TaskJSON`
+- [x] `taskDeleteCmd` — returns single `TaskJSON` (empty file_path)
+- [x] `searchCmd` — returns `[]TaskJSON` array
+- [x] `indexRebuildCmd` — returns `{"indexed": N}`
+
+### Convention & ADR Compliance
+
+- [x] Commit message format: `M2.10+M2.11+M2.12:` prefix — matches AGENTS.md convention
+- [x] Error wrapping with `%w` — consistent throughout new methods
+- [x] `defer func() { _ = rows.Close() }()` — resource cleanup pattern maintained
+- [x] `defer func() { _ = a.Close() }()` — app cleanup in all commands
+- [x] ADR-003 §3 output modes: text (default), JSON (`--json`), quiet (`--quiet`) — all implemented
+- [x] ADR-003 §6 completions: dynamic task IDs with `ID\tTitle` format, dynamic tags/boxes, static enums
+- [x] `cmd.Printf` / `cmd.Println` — uses Cobra output writers (not `fmt.Println`), testable
+- [x] Test naming: `TestIntegration*` prefix — clear integration test identification
+
+### Issues Found
+
+**🐛 Bug: `ListTasks`/`Search`/`FindByPrefix` don't load tags or contexts from junction tables**
+
+The `collectTasks()` scanner only reads the 16 columns from the `tasks` table. Tags and contexts live in `task_tags`/`task_contexts` junction tables and are only loaded in `GetTask()` (which calls `loadTags`/`loadContexts`).
+
+This means:
+- `bt list --json` returns `"tags": []` for all tasks (even those with tags)
+- `bt search --json` same issue
+- `bt list` (styled) also can't show tags properly — though it tries (line 265-271 in commands.go)
+
+**This is a pre-existing bug from M1.3**, not introduced in this commit. The impact was hidden until JSON output made the data visible. The styled `list` command happened to hide it because the empty tag slice just meant no tags were shown.
+
+**Severity**: Medium — affects data completeness in list/search views but not in show/edit/done.
+**Fix**: Either (a) add per-task tag/context loading in `collectTasks`, or (b) use a LEFT JOIN to `task_tags`/`task_contexts` in the ListTasks query, or (c) batch-load tags/contexts for all returned tasks in one query.
+
+**⚠️ Minor: `bt add --json` computes `file_path` differently than stored**
+
+In `runAdd` (line 146-149), the JSON path is computed inline:
+```go
+relPath := "inbox/" + task.ID + ".md"
+if opts.Box != "" { relPath = opts.Box + "/" + task.ID + ".md" }
+```
+But the actual `taskFilePath()` helper in `app.go` uses `filepath.Join()` which is platform-aware. These will produce the same result on Unix but could diverge on Windows. Minor since BentoTask is Unix-focused, but worth noting.
+
+**Verdict**: **APPROVED WITH NOTES** ✅
+
+M2 is complete. All 12 milestones tasks pass verification. The tag/context loading bug is pre-existing and doesn't block M2 closure, but should be fixed early in M3 or as a standalone fix before M3 work begins.
+
+**Recommended actions**:
+1. Fix the tags/contexts loading bug in `ListTasks`/`Search`/`FindByPrefix` (ideally before M3 starts)
+2. Begin M3: Habits & Recurrence (M3.1: RRULE model)
+
+---
+
 ## [2026-04-06] Review: M2.8 + M2.9 — Styled Output & Full-Text Search (UNCOMMITTED)
 
 **Reviewed by**: Supervisor Agent  

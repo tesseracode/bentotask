@@ -11,7 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/tesserabox/bentotask/internal/habit"
 	"github.com/tesserabox/bentotask/internal/model"
+	"github.com/tesserabox/bentotask/internal/recurrence"
 	"github.com/tesserabox/bentotask/internal/store"
 )
 
@@ -276,6 +278,158 @@ func (a *App) DeleteTask(idOrPrefix string) (*model.Task, error) {
 func (a *App) RebuildIndex() (int, error) {
 	return a.Index.RebuildIndex(a.DataDir)
 }
+
+// --- Habits ---
+
+// AddHabit creates a new habit task with the given frequency and recurrence.
+func (a *App) AddHabit(title string, opts HabitOptions) (*model.Task, error) {
+	now := time.Now().UTC()
+
+	// Validate the recurrence rule
+	if err := recurrence.Validate(opts.Recurrence); err != nil {
+		return nil, fmt.Errorf("invalid recurrence: %w", err)
+	}
+
+	task := &model.Task{
+		ID:      model.NewID(),
+		Title:   title,
+		Type:    model.TaskTypeHabit,
+		Status:  model.StatusActive,
+		Created: now,
+		Updated: now,
+		Frequency: &model.HabitFrequency{
+			Type:   opts.FreqType,
+			Target: opts.FreqTarget,
+		},
+		Recurrence: opts.Recurrence,
+	}
+
+	if opts.Priority != "" {
+		task.Priority = opts.Priority
+	}
+	if opts.Energy != "" {
+		task.Energy = opts.Energy
+	}
+	if len(opts.Tags) > 0 {
+		task.Tags = opts.Tags
+	}
+	if len(opts.Context) > 0 {
+		task.Context = opts.Context
+	}
+
+	if errs := task.Validate(); len(errs) > 0 {
+		return nil, fmt.Errorf("validation failed: %s", errs[0])
+	}
+
+	relPath := taskFilePath(task)
+	absPath := filepath.Join(a.DataDir, relPath)
+
+	if err := store.WriteFile(absPath, task); err != nil {
+		return nil, fmt.Errorf("write habit: %w", err)
+	}
+	if err := a.Index.UpsertTask(task, relPath); err != nil {
+		return nil, fmt.Errorf("index habit: %w", err)
+	}
+
+	return task, nil
+}
+
+// LogHabit records a completion for a habit. It updates both the SQLite index
+// and the markdown body (source of truth).
+func (a *App) LogHabit(idOrPrefix string, duration int, note string) (*model.Task, error) {
+	task, relPath, err := a.GetTask(idOrPrefix)
+	if err != nil {
+		return nil, err
+	}
+	if task.Type != model.TaskTypeHabit {
+		return nil, fmt.Errorf("task %q is not a habit (type: %s)", task.Title, task.Type)
+	}
+
+	now := time.Now().UTC()
+
+	// Append to markdown body
+	c := habit.Completion{
+		CompletedAt: now,
+		Duration:    duration,
+		Note:        note,
+	}
+	task.Body = habit.AppendCompletionToBody(task.Body, c)
+	task.Updated = now
+
+	// Recalculate streaks from all completions in the body
+	completions := habit.ParseCompletionsFromBody(task.Body)
+	freqType := "daily"
+	if task.Frequency != nil {
+		freqType = task.Frequency.Type
+	}
+	stats := habit.CalculateStreak(completions, freqType)
+	task.StreakCurrent = stats.CurrentStreak
+	task.StreakLongest = stats.LongestStreak
+
+	// Write to disk
+	absPath := filepath.Join(a.DataDir, relPath)
+	if err := store.WriteFile(absPath, task); err != nil {
+		return nil, fmt.Errorf("write habit: %w", err)
+	}
+
+	// Update index
+	if err := a.Index.UpsertTask(task, relPath); err != nil {
+		return nil, fmt.Errorf("index habit: %w", err)
+	}
+
+	// Log to SQLite completions table
+	if err := a.Index.LogHabitCompletion(task.ID, now, duration, note); err != nil {
+		return nil, fmt.Errorf("log completion: %w", err)
+	}
+
+	return task, nil
+}
+
+// HabitStats returns statistics for a habit including streaks and completion rate.
+func (a *App) HabitStats(idOrPrefix string) (*model.Task, *habit.Stats, error) {
+	task, _, err := a.GetTask(idOrPrefix)
+	if err != nil {
+		return nil, nil, err
+	}
+	if task.Type != model.TaskTypeHabit {
+		return nil, nil, fmt.Errorf("task %q is not a habit (type: %s)", task.Title, task.Type)
+	}
+
+	completions := habit.ParseCompletionsFromBody(task.Body)
+
+	freqType := "daily"
+	target := 1
+	if task.Frequency != nil {
+		freqType = task.Frequency.Type
+		if task.Frequency.Target > 0 {
+			target = task.Frequency.Target
+		}
+	}
+
+	stats := habit.CalculateStreak(completions, freqType)
+	stats.CompletionRate = habit.CompletionRate(completions, freqType, target, 30)
+	stats.RatePeriodDays = 30
+
+	return task, &stats, nil
+}
+
+// ListHabits returns all habit tasks from the index.
+func (a *App) ListHabits() ([]*store.IndexedTask, error) {
+	return a.Index.ListTasks(&store.TaskFilter{Type: model.TaskTypeHabit})
+}
+
+// HabitOptions holds options for creating a new habit.
+type HabitOptions struct {
+	FreqType   string // "daily" or "weekly"
+	FreqTarget int    // how many times per period
+	Recurrence string // RRULE string
+	Priority   model.Priority
+	Energy     model.Energy
+	Tags       []string
+	Context    []string
+}
+
+// --- Shell Completions ---
 
 // CompleteTasks returns task ID+title pairs for shell completion.
 // Only returns non-done tasks for a better completion experience.

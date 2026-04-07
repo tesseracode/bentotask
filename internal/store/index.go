@@ -330,10 +330,65 @@ func (idx *Index) Search(query string) ([]*IndexedTask, error) {
 	return idx.collectTasks(rows)
 }
 
+// --- Habit Completions ---
+
+// LogHabitCompletion inserts a completion record for a habit.
+func (idx *Index) LogHabitCompletion(habitID string, completedAt time.Time, duration int, note string) error {
+	_, err := idx.db.Exec(`
+		INSERT INTO habit_completions (habit_id, completed_at, duration, note)
+		VALUES (?, ?, ?, ?)`,
+		habitID,
+		completedAt.UTC().Format("2006-01-02T15:04:05Z"),
+		nullIfZero(duration),
+		nullIfEmpty(note),
+	)
+	if err != nil {
+		return fmt.Errorf("log habit completion: %w", err)
+	}
+	return nil
+}
+
+// HabitCompletions returns all completions for a habit, ordered by date descending.
+func (idx *Index) HabitCompletions(habitID string) ([]HabitCompletion, error) {
+	rows, err := idx.db.Query(`
+		SELECT completed_at, duration, note
+		FROM habit_completions
+		WHERE habit_id = ?
+		ORDER BY completed_at DESC`, habitID)
+	if err != nil {
+		return nil, fmt.Errorf("query habit completions: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var completions []HabitCompletion
+	for rows.Next() {
+		var c HabitCompletion
+		if err := rows.Scan(&c.CompletedAt, &c.Duration, &c.Note); err != nil {
+			return nil, fmt.Errorf("scan habit completion: %w", err)
+		}
+		completions = append(completions, c)
+	}
+	return completions, rows.Err()
+}
+
+// HabitCompletionCount returns the number of completions for a habit.
+func (idx *Index) HabitCompletionCount(habitID string) (int, error) {
+	var count int
+	err := idx.db.QueryRow("SELECT COUNT(*) FROM habit_completions WHERE habit_id = ?", habitID).Scan(&count)
+	return count, err
+}
+
+// HabitCompletion represents a single habit completion record from the index.
+type HabitCompletion struct {
+	CompletedAt string
+	Duration    *int
+	Note        *string
+}
+
 // RebuildIndex drops all data and re-indexes every .md file under dataDir.
 func (idx *Index) RebuildIndex(dataDir string) (int, error) {
 	// Clear existing data
-	for _, table := range []string{"task_links", "task_contexts", "task_tags", "tasks", "tasks_fts"} {
+	for _, table := range []string{"habit_completions", "task_links", "task_contexts", "task_tags", "tasks", "tasks_fts"} {
 		if _, err := idx.db.Exec("DELETE FROM " + table); err != nil {
 			return 0, fmt.Errorf("clear %s: %w", table, err)
 		}
