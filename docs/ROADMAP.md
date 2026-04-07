@@ -36,20 +36,20 @@
 - [x] M1.3 — SQLite index: schema, create, rebuild from files
 - [x] M1.4 — File watcher for external changes
 - [x] M1.5 — ULID generation for task IDs
-- [ ] M1.6 — Unit tests for data model & storage layer
+- [x] M1.6 — Unit tests for data model & storage layer
 
 ---
 
 ## Milestone 2: Basic CLI (Phase 1b)
 **Goal**: Functional CLI for task CRUD operations.
 
-- [ ] M2.1 — CLI scaffolding (command structure, help, version)
-- [ ] M2.2 — `bt add` — create tasks with flags
-- [ ] M2.3 — `bt list` — list tasks with filters
-- [ ] M2.4 — `bt done` — mark task complete
+- [x] M2.1 — CLI scaffolding (command structure, help, version)
+- [x] M2.2 — `bt add` — create tasks with flags
+- [x] M2.3 — `bt list` — list tasks with filters
+- [x] M2.4 — `bt done` — mark task complete
 - [ ] M2.5 — `bt edit` — modify existing task
-- [ ] M2.6 — `bt delete` — remove task
-- [ ] M2.7 — `bt show <id>` — display task details
+- [x] M2.6 — `bt delete` — remove task
+- [x] M2.7 — `bt show <id>` — display task details
 - [ ] M2.8 — Tags, priority, energy level support
 - [ ] M2.9 — Search and filtering (by tag, priority, status, box)
 - [ ] M2.10 — Tab completion (bash, zsh, fish)
