@@ -1,10 +1,10 @@
 # Current Handoff
 
 ## Active Task
-- **Task ID**: M4 (Group B Complete, Group C Next)
-- **Milestone**: M4 — Routines & Links
-- **Description**: Task linking, dependency validation, link CLI commands
-- **Status**: Group A+B Complete, Group C (tests review) Next
+- **Task ID**: M5 (Smart Scheduling)
+- **Milestone**: M5 — Smart Scheduling
+- **Description**: Bento Packing Algorithm, urgency scoring, energy matching, bt now, bt plan today
+- **Status**: Planning Complete, Implementation Next
 - **Assigned**: 2026-04-07
 
 ## Last Session Summary
@@ -12,45 +12,89 @@
 - **Session 4 (2026-04-06)**: M2.10–M2.12 — Tab completions, integration tests, --json
 - **Session 5 (2026-04-07)**: M3 COMPLETE — Habits & Recurrence
 - **Session 6 (2026-04-07)**: Bug fixes from M3 review + M4 Group A (Routines)
-- **Session 7 (2026-04-07)**: Bug fix from M4-A review (TaskJSON steps/schedule) + M4 Group B (Linking)
-  - M4.4: Task linking — depends-on, blocks, related-to
-  - M4.5: Dependency validation — DFS cycle detection for depends-on/blocks
-  - M4.6: `bt link` / `bt unlink` CLI commands with --json, --quiet, completions
-  - Links displayed in `bt task show` (both outgoing and incoming/backlinks)
-  - Store: LoadLinks, LoadBacklinks, DependencyGraph methods
-  - App: LinkTasks, UnlinkTasks, GetTaskLinks, hasCycle
-  - 28 new tests (17 app, 5 cycle-detection unit, 15 integration)
+- **Session 7 (2026-04-07)**: M4 Group B (Linking) + fixes from reviews
+- **Session 8 (2026-04-07)**: M4 closure — fixed flaky TestNextAfterDaily, marked M4.7 complete, planned M5
+  - Fixed flaky recurrence tests by adding SetDTStart method and pinning DTSTART in tests
+  - Also fixed TestNextAfterWeeklyMWF, TestBetween, TestBetweenWeekly (same root cause)
+  - Marked M4 COMPLETE in ROADMAP (all 7 tasks checked)
+  - Planned M5 in grouped subtasks below
 
 ## Current State
-- **M0 COMPLETE**, **M1 COMPLETE**, **M2 COMPLETE**, **M3 COMPLETE**
-- **M4 Group A COMPLETE** (M4.1 + M4.2 + M4.3)
-- **M4 Group B COMPLETE** (M4.4 + M4.5 + M4.6)
+- **M0 COMPLETE**, **M1 COMPLETE**, **M2 COMPLETE**, **M3 COMPLETE**, **M4 COMPLETE**
 - Module: `github.com/tesserabox/bentotask`
-- `make test`: **234 tests** — 0 lint issues
-- Packages:
-  - `internal/model/` — Task struct, validation, helpers, ULID, Link/LinkType
-  - `internal/store/` — Markdown I/O, SQLite index (FTS5 + habit_completions + task_links), file watcher
-  - `internal/app/` — Application logic (CRUD, search, habits, routines, linking, cycle detection)
-  - `internal/cli/` — Cobra commands, completions, JSON output, habit + routine + link commands
-  - `internal/style/` — Terminal colors/formatting via lipgloss
-  - `internal/recurrence/` — RRULE parsing and next-occurrence calculation
-  - `internal/habit/` — Streak calculation, completion parsing, body formatting
+- `make test`: **215 tests** — 0 lint issues, 0 vet issues
+- Binary: `make build` — up to date
 
-## Next Steps (M4.7 / Group C)
-1. **M4.7**: Review test coverage for routines and dependency graph
-   - Tests are already inline with Groups A and B (22 routine + 28 linking = 50 new tests)
-   - M4.7 may be considered complete already — supervisor to verify
+## M5 Plan — Smart Scheduling
+
+### Group A: Scoring Engine (M5.1 + M5.2 + M5.3 + M5.4)
+Core scoring functions — no CLI yet, just the `internal/engine/` package.
+
+- **M5.1: Urgency scoring** — `urgency(t) → float64` per spec §6.3
+  - Due today → 1.0, tomorrow → 0.8, 3d → 0.6, 7d → 0.4, 30d → 0.2
+  - Floating tasks get 0.1 + age_factor
+  - No due date → 0.0
+- **M5.2: Priority scoring** — `priority(t) → float64`
+  - urgent → 1.0, high → 0.75, medium → 0.5, low → 0.25, none → 0.0
+- **M5.3: Energy matching** — `energyMatch(t, E) → float64`
+  - Exact match → 1.0, one level below → 0.5, two levels below → 0.2
+  - Filter: tasks with energy > E are excluded (done in packing, not scoring)
+- **M5.4: Streak risk detection** — `streakRisk(t) → float64`
+  - Daily habit not completed today → 1.0
+  - Daily habit completed today → 0.0
+  - Weekly habit: (target - completions this week) / target, boosted if deadline approaching
+  - Non-habits → 0.0
+
+### Group B: Algorithm + Filters (M5.1 continued + M5.5 + M5.6)
+The packing algorithm that combines scores and produces suggestions.
+
+- **M5.5: Bento Packing Algorithm** — per spec §6.1
+  - Filter: context match, energy ≤ E, duration ≤ T, dependencies met
+  - Score each task using weighted sum (spec §6.2 default weights)
+  - Greedy knapsack: sort by score/duration ratio, pack until full
+  - For remaining time gaps, fit smaller tasks (First Fit Decreasing)
+  - Returns ordered suggestion list
+- **M5.6: Age boost + dependency unlock sub-functions**
+  - `ageBoost(t)`: logarithmic growth based on days since creation, cap at 1.0
+  - `dependencyUnlock(t)`: count of tasks blocked by t, normalized
+
+### Group C: CLI Commands (M5.7 + M5.8)
+Wire the engine to CLI.
+
+- **M5.7: `bt now` command** — "What should I do now?"
+  - `bt now` — default 60 min, medium energy, any context
+  - `bt now --time 45 --energy low --context home`
+  - Shows top N suggestions with score breakdown
+  - `--json` output mode
+- **M5.8: `bt plan today` command** — Generate today's schedule
+  - Takes total available time (default configurable)
+  - Packs tasks into a day plan ordered by time
+  - Shows a time-blocked plan view
+
+### Group D: Tests + Tuning (M5.9)
+- **M5.9: Tests and benchmarks**
+  - Unit tests for each scoring function
+  - Integration tests for bt now / bt plan today
+  - Algorithm benchmarks for tuning weights
+
+### Implementation Notes
+- New package: `internal/engine/` — scoring functions + packing algorithm
+- Engine depends on: `model` (Task, Priority, Energy, LinkType), `store` (queries)
+- Engine does NOT depend on: `cli`, `habit`, `recurrence`
+- The `user_preference` factor (spec §6.1, w7) is deferred — requires accept/skip history storage
+- Context is already supported on tasks (model.Task.Context field, task_contexts table)
+- Dependencies already exist via task_links (depends-on/blocks) from M4
 
 ## Blockers
 - None
 
 ## Context for Next Agent
-- Link types: depends-on (scheduling), blocks (scheduling), related-to (informational)
-- Cycle detection uses DFS with 3-color marking (white/gray/black) — only for depends-on and blocks
-- related-to links are bidirectional and skip cycle detection
-- Links stored in task YAML frontmatter (`links:` field) and indexed in `task_links` table
-- `bt task show` displays both outgoing (→) and incoming (←) links with titles
-- `bt show --json` includes `links` array with type, direction, task_id, task_title
-- `bt link` defaults to `related-to`, override with `-t depends-on` or `-t blocks`
-- Self-links and duplicate links are rejected
-- `task_links` table has composite PK on (source_id, target_id, link_type)
+- SPEC.md §3.4, §6.1–§6.3 define the algorithm in detail
+- Default weights in spec §6.2: urgency=0.25, priority=0.20, energy=0.15, streak_risk=0.15, age=0.10, dep_unlock=0.10, user_pref=0.05
+- `user_preference` (w7=0.05) is deferred — no accept/skip history table yet
+- Energy is a 3-level enum: low=1, medium=2, high=3
+- Habit completions are in `habit.ParseCompletionsFromBody()` (markdown SOT)
+- Streak calculation is in `habit.CalculateStreak()`
+- Task links are in `store.DependencyGraph()` and `app.GetTaskLinks()`
+- Start with `internal/engine/score.go` for the scoring functions
+- Key files: SPEC.md §6, internal/model/task.go, internal/app/app.go, internal/store/index.go

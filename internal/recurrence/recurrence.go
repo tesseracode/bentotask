@@ -44,6 +44,19 @@ func (r *Rule) String() string {
 	return r.raw
 }
 
+// SetDTStart overrides the rule's DTSTART to the given time.
+// This is useful for pinning recurrence to a fixed start date
+// rather than relying on the default (time.Now()).
+func (r *Rule) SetDTStart(dt time.Time) {
+	opts := r.rrule.OrigOptions
+	opts.Dtstart = dt
+	adjusted, err := rrule.NewRRule(opts)
+	if err != nil {
+		return // keep original on error
+	}
+	r.rrule = adjusted
+}
+
 // NextAfter returns the next occurrence strictly after the given time.
 // Used for fixed-anchor recurrence: the schedule is calendar-based
 // regardless of when the task was last completed.

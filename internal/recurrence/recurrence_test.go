@@ -88,6 +88,8 @@ func TestValidate(t *testing.T) {
 
 func TestNextAfterDaily(t *testing.T) {
 	r, _ := Parse("FREQ=DAILY")
+	// Pin DTSTART to a fixed date so the test doesn't depend on time.Now()
+	r.SetDTStart(time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC))
 
 	after := time.Date(2026, 4, 7, 10, 0, 0, 0, time.UTC)
 	next, ok := r.NextAfter(after)
@@ -105,6 +107,8 @@ func TestNextAfterDaily(t *testing.T) {
 
 func TestNextAfterWeeklyMWF(t *testing.T) {
 	r, _ := Parse("FREQ=WEEKLY;BYDAY=MO,WE,FR")
+	// Pin DTSTART to a Monday before the test range
+	r.SetDTStart(time.Date(2026, 4, 6, 0, 0, 0, 0, time.UTC))
 
 	// 2026-04-07 is a Tuesday
 	after := time.Date(2026, 4, 7, 10, 0, 0, 0, time.UTC)
@@ -136,6 +140,7 @@ func TestNextAfterCompletion(t *testing.T) {
 
 func TestBetween(t *testing.T) {
 	r, _ := Parse("FREQ=DAILY")
+	r.SetDTStart(time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC))
 
 	start := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2026, 4, 7, 23, 59, 59, 0, time.UTC)
@@ -148,6 +153,7 @@ func TestBetween(t *testing.T) {
 
 func TestBetweenWeekly(t *testing.T) {
 	r, _ := Parse("FREQ=WEEKLY;BYDAY=MO,WE,FR")
+	r.SetDTStart(time.Date(2026, 4, 6, 0, 0, 0, 0, time.UTC))
 
 	start := time.Date(2026, 4, 6, 0, 0, 0, 0, time.UTC)   // Monday
 	end := time.Date(2026, 4, 12, 23, 59, 59, 0, time.UTC) // Sunday

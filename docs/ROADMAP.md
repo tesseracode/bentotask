@@ -80,7 +80,7 @@
 - [x] M4.4 — Task linking (depends-on, blocks, related-to)
 - [x] M4.5 — Dependency validation (cycle detection)
 - [x] M4.6 — `bt link` / `bt unlink` commands
-- [ ] M4.7 — Tests for routines and dependency graph
+- [x] M4.7 — Tests for routines and dependency graph
 
 ---
 
