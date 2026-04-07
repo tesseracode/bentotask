@@ -143,10 +143,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	if isJSON(cmd) {
-		relPath := "inbox/" + task.ID + ".md"
-		if opts.Box != "" {
-			relPath = opts.Box + "/" + task.ID + ".md"
-		}
+		_, relPath, _ := a.GetTask(task.ID)
 		return writeJSON(cmd.OutOrStdout(), taskToJSON(task, relPath))
 	}
 

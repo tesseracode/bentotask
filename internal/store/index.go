@@ -203,7 +203,7 @@ func (idx *Index) FindByPrefix(prefix string) ([]*IndexedTask, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	return collectTasks(rows)
+	return idx.collectTasks(rows)
 }
 
 // ListTasks returns all tasks matching the given filter.
@@ -267,7 +267,7 @@ func (idx *Index) ListTasks(f *TaskFilter) ([]*IndexedTask, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	return collectTasks(rows)
+	return idx.collectTasks(rows)
 }
 
 // TaskCount returns the total number of tasks in the index.
@@ -327,7 +327,7 @@ func (idx *Index) Search(query string) ([]*IndexedTask, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	return collectTasks(rows)
+	return idx.collectTasks(rows)
 }
 
 // RebuildIndex drops all data and re-indexes every .md file under dataDir.
@@ -429,7 +429,7 @@ func scanTask(row *sql.Row) (*IndexedTask, error) {
 	return &t, nil
 }
 
-func collectTasks(rows *sql.Rows) ([]*IndexedTask, error) {
+func (idx *Index) collectTasks(rows *sql.Rows) ([]*IndexedTask, error) {
 	var tasks []*IndexedTask
 	for rows.Next() {
 		var t IndexedTask
@@ -443,7 +443,26 @@ func collectTasks(rows *sql.Rows) ([]*IndexedTask, error) {
 		}
 		tasks = append(tasks, &t)
 	}
-	return tasks, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Load tags and contexts for each task from junction tables
+	for _, t := range tasks {
+		tags, err := idx.loadTags(t.ID)
+		if err != nil {
+			return nil, fmt.Errorf("load tags for %s: %w", t.ID, err)
+		}
+		t.Tags = tags
+
+		contexts, err := idx.loadContexts(t.ID)
+		if err != nil {
+			return nil, fmt.Errorf("load contexts for %s: %w", t.ID, err)
+		}
+		t.Contexts = contexts
+	}
+
+	return tasks, nil
 }
 
 func (idx *Index) loadTags(taskID string) ([]string, error) {

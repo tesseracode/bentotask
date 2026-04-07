@@ -599,3 +599,40 @@ func TestIntegrationJSONNullSafety(t *testing.T) {
 		t.Error("JSON output should use [] for empty tags, not null")
 	}
 }
+
+func TestIntegrationJSONListShowsTags(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Add tasks with tags and contexts
+	_, _ = executeCmdInDir(t, dataDir, "add", "Tagged task", "--tag", "work", "--tag", "urgent", "-c", "office")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Plain task")
+
+	// List in JSON should include tags from junction tables
+	out, err := executeCmdInDir(t, dataDir, "list", "--json")
+	if err != nil {
+		t.Fatalf("list --json error: %v\noutput: %s", err, out)
+	}
+
+	var results []TaskJSON
+	if err := json.Unmarshal([]byte(out), &results); err != nil {
+		t.Fatalf("failed to parse JSON: %v\noutput: %s", err, out)
+	}
+
+	// Find the tagged task (listed in reverse chronological order)
+	var tagged *TaskJSON
+	for i := range results {
+		if results[i].Title == "Tagged task" {
+			tagged = &results[i]
+			break
+		}
+	}
+	if tagged == nil {
+		t.Fatal("Tagged task not found in list results")
+	}
+	if len(tagged.Tags) != 2 {
+		t.Errorf("list --json tags = %v, want 2 tags [urgent work]", tagged.Tags)
+	}
+	if len(tagged.Contexts) != 1 || tagged.Contexts[0] != "office" {
+		t.Errorf("list --json contexts = %v, want [office]", tagged.Contexts)
+	}
+}

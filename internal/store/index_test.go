@@ -226,6 +226,13 @@ func TestListTasksFilterByTag(t *testing.T) {
 	if len(results) != 1 || results[0].ID != "01TAG00001" {
 		t.Errorf("ListTasks(tag=errands) returned wrong results")
 	}
+
+	// Verify tags are populated on the returned IndexedTask
+	if len(results) > 0 {
+		if len(results[0].Tags) != 2 {
+			t.Errorf("ListTasks result Tags = %v, want 2 tags", results[0].Tags)
+		}
+	}
 }
 
 func TestListTasksFilterByContext(t *testing.T) {
@@ -245,6 +252,13 @@ func TestListTasksFilterByContext(t *testing.T) {
 	}
 	if len(results) != 1 || results[0].ID != "01CTX00001" {
 		t.Errorf("ListTasks(context=home) returned wrong results")
+	}
+
+	// Verify contexts are populated on the returned IndexedTask
+	if len(results) > 0 {
+		if len(results[0].Contexts) != 1 || results[0].Contexts[0] != "home" {
+			t.Errorf("ListTasks result Contexts = %v, want [home]", results[0].Contexts)
+		}
 	}
 }
 
