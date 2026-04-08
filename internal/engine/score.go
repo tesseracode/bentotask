@@ -265,6 +265,9 @@ func AgeBoost(created time.Time, now time.Time) float64 {
 
 	// Logarithmic growth: reaches 1.0 at ~90 days
 	score := math.Log2(1+days) / math.Log2(91)
+	if score < 0.001 {
+		return 0.0
+	}
 	if score > 1.0 {
 		score = 1.0
 	}
