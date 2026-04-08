@@ -55,6 +55,18 @@ func (s *Server) handleCreateHabit(w http.ResponseWriter, r *http.Request) {
 	if opts.FreqTarget == 0 {
 		opts.FreqTarget = 1
 	}
+	// Auto-generate RRULE from frequency if not explicitly provided
+	if opts.Recurrence == "" {
+		switch opts.FreqType {
+		case "daily":
+			opts.Recurrence = "FREQ=DAILY"
+		case "weekly":
+			opts.Recurrence = "FREQ=WEEKLY"
+		default:
+			respondValidationError(w, "unknown frequency type: "+opts.FreqType)
+			return
+		}
+	}
 
 	s.mu.Lock()
 	task, err := s.app.AddHabit(req.Title, opts)
