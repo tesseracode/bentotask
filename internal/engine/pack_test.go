@@ -512,7 +512,7 @@ func TestEnergyFits(t *testing.T) {
 		{model.EnergyHigh, model.EnergyMedium, false},
 		{model.EnergyHigh, model.EnergyHigh, true},
 		{"", "", true},               // both default to medium
-		{"", model.EnergyLow, false},  // default medium > low
+		{"", model.EnergyLow, false}, // default medium > low
 	}
 
 	for _, tt := range tests {

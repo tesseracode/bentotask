@@ -18,65 +18,65 @@ import (
 // user_preference (w7=0.05) is deferred — requires accept/skip history.
 // The remaining 0.95 is distributed across the 6 active factors.
 var DefaultWeights = Weights{
-	Urgency:         0.25,
-	Priority:        0.20,
-	EnergyMatch:     0.15,
+	Urgency:          0.25,
+	Priority:         0.20,
+	EnergyMatch:      0.15,
 	StreakRisk:       0.15,
-	AgeBoost:        0.10,
+	AgeBoost:         0.10,
 	DependencyUnlock: 0.10,
 }
 
 // Weights holds the scoring weights for the Bento Packing Algorithm.
 // All values should be in [0, 1] and ideally sum to ~1.0.
 type Weights struct {
-	Urgency         float64
-	Priority        float64
-	EnergyMatch     float64
+	Urgency          float64
+	Priority         float64
+	EnergyMatch      float64
 	StreakRisk       float64
-	AgeBoost        float64
+	AgeBoost         float64
 	DependencyUnlock float64
 }
 
 // ScoreBreakdown holds the individual factor scores and the final
 // weighted score for a task. Useful for debugging and display.
 type ScoreBreakdown struct {
-	Urgency         float64 `json:"urgency"`
-	Priority        float64 `json:"priority"`
-	EnergyMatch     float64 `json:"energy_match"`
+	Urgency          float64 `json:"urgency"`
+	Priority         float64 `json:"priority"`
+	EnergyMatch      float64 `json:"energy_match"`
 	StreakRisk       float64 `json:"streak_risk"`
-	AgeBoost        float64 `json:"age_boost"`
+	AgeBoost         float64 `json:"age_boost"`
 	DependencyUnlock float64 `json:"dependency_unlock"`
-	Total           float64 `json:"total"`
+	Total            float64 `json:"total"`
 }
 
 // HabitInfo carries habit-specific data needed for streak risk scoring.
 // Populated from the habit package before calling ScoreTask.
 type HabitInfo struct {
-	FreqType          string // "daily" or "weekly"
-	FreqTarget        int    // target completions per period
-	CompletedToday    bool   // has the habit been completed today?
-	CompletionsThisWeek int  // number of completions in the current ISO week
-	CurrentStreak     int    // current streak length
+	FreqType            string // "daily" or "weekly"
+	FreqTarget          int    // target completions per period
+	CompletedToday      bool   // has the habit been completed today?
+	CompletionsThisWeek int    // number of completions in the current ISO week
+	CurrentStreak       int    // current streak length
 }
 
 // TaskContext provides all the context needed to score a single task.
 type TaskContext struct {
-	Task          *model.Task
-	Now           time.Time
-	UserEnergy    model.Energy        // user's current energy level
-	HabitInfo     *HabitInfo          // nil for non-habit tasks
-	BlockedCount  int                 // how many tasks are blocked by this one
-	TotalTasks    int                 // total eligible tasks (for normalization)
+	Task         *model.Task
+	Now          time.Time
+	UserEnergy   model.Energy // user's current energy level
+	HabitInfo    *HabitInfo   // nil for non-habit tasks
+	BlockedCount int          // how many tasks are blocked by this one
+	TotalTasks   int          // total eligible tasks (for normalization)
 }
 
 // ScoreTask computes the full score breakdown for a task using the given weights.
 func ScoreTask(ctx TaskContext, w Weights) ScoreBreakdown {
 	bd := ScoreBreakdown{
-		Urgency:         Urgency(ctx.Task, ctx.Now),
-		Priority:        PriorityScore(ctx.Task.Priority),
-		EnergyMatch:     EnergyMatch(ctx.Task.Energy, ctx.UserEnergy),
+		Urgency:          Urgency(ctx.Task, ctx.Now),
+		Priority:         PriorityScore(ctx.Task.Priority),
+		EnergyMatch:      EnergyMatch(ctx.Task.Energy, ctx.UserEnergy),
 		StreakRisk:       StreakRisk(ctx.HabitInfo, ctx.Now),
-		AgeBoost:        AgeBoost(ctx.Task.Created, ctx.Now),
+		AgeBoost:         AgeBoost(ctx.Task.Created, ctx.Now),
 		DependencyUnlock: DependencyUnlock(ctx.BlockedCount, ctx.TotalTasks),
 	}
 

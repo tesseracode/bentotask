@@ -812,42 +812,47 @@ func (a *App) buildPackRequest(opts SuggestOptions) (engine.PackRequest, error) 
 		}
 	}
 
-	// Build blocked-by map from dependency graph
+	// Build blocked-by map from dependency graph.
+	// depGraph stores depends-on edges: source depends on target.
+	// So if A depends-on B, completing B unblocks A.
+	// We count: for each task T, how many tasks depend on T?
 	blockedByMap := make(map[string]int)
 	depGraph, err := a.Index.DependencyGraph()
 	if err == nil {
-		// Count how many tasks each task blocks
 		for _, targets := range depGraph {
 			for _, target := range targets {
 				blockedByMap[target]++
 			}
 		}
-		// Invert: we want "how many tasks does THIS task unblock?"
-		// depGraph is source→targets where source depends-on/blocks target
-		// Actually, DependencyGraph stores depends-on edges: source depends on target
-		// So if A depends-on B, completing B unblocks A
-		// We need: for each task T, how many tasks depend on T (are blocked by T)?
-		blockedByMap = make(map[string]int)
-		for source, targets := range depGraph {
-			_ = source
-			for _, target := range targets {
-				// target is depended on by source
-				// So completing target unblocks source
-				blockedByMap[target]++
-			}
-		}
 	}
 
-	// Build unmet dependencies set
+	// Build unmet dependencies set.
+	// A task is blocked if:
+	//   1. It has a depends-on link to a task that isn't done, OR
+	//   2. Another task has a blocks link pointing to it and isn't done.
 	unmetDeps := make(map[string]bool)
+
+	// Check depends-on links (outgoing from the task)
 	for _, task := range tasks {
 		for _, link := range task.Links {
 			if link.Type == model.LinkDependsOn {
-				// Check if the dependency is done
 				depTask, depErr := a.Index.GetTask(link.Target)
 				if depErr != nil || depTask.Status != "done" {
 					unmetDeps[task.ID] = true
 					break
+				}
+			}
+		}
+	}
+
+	// Check blocks links (if A blocks B and A isn't done, B is blocked)
+	for _, task := range tasks {
+		for _, link := range task.Links {
+			if link.Type == model.LinkBlocks {
+				// This task blocks link.Target — if this task isn't done,
+				// the target has an unmet dependency.
+				if task.Status != model.StatusDone {
+					unmetDeps[link.Target] = true
 				}
 			}
 		}

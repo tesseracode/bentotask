@@ -1402,9 +1402,9 @@ func TestIntegrationNowBasic(t *testing.T) {
 	dataDir := t.TempDir()
 
 	// Create some tasks
-	executeCmdInDir(t, dataDir, "add", "Buy groceries", "-p", "low", "-e", "low", "--duration", "30")
-	executeCmdInDir(t, dataDir, "add", "Write report", "-p", "high", "-e", "medium", "--duration", "60", "--due", "2026-04-09")
-	executeCmdInDir(t, dataDir, "add", "Review code", "-p", "medium", "-e", "medium", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Buy groceries", "-p", "low", "-e", "low", "--duration", "30")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Write report", "-p", "high", "-e", "medium", "--duration", "60", "--due", "2026-04-09")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Review code", "-p", "medium", "-e", "medium", "--duration", "20")
 
 	out, err := executeCmdInDir(t, dataDir, "now")
 	if err != nil {
@@ -1437,8 +1437,8 @@ func TestIntegrationNowEmpty(t *testing.T) {
 func TestIntegrationNowWithFlags(t *testing.T) {
 	dataDir := t.TempDir()
 
-	executeCmdInDir(t, dataDir, "add", "Low task", "-e", "low", "--duration", "15")
-	executeCmdInDir(t, dataDir, "add", "High task", "-e", "high", "--duration", "15")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Low task", "-e", "low", "--duration", "15")
+	_, _ = executeCmdInDir(t, dataDir, "add", "High task", "-e", "high", "--duration", "15")
 
 	// With low energy — should only show low task
 	out, err := executeCmdInDir(t, dataDir, "now", "--energy", "low")
@@ -1456,8 +1456,8 @@ func TestIntegrationNowWithFlags(t *testing.T) {
 func TestIntegrationNowContextFilter(t *testing.T) {
 	dataDir := t.TempDir()
 
-	executeCmdInDir(t, dataDir, "add", "Home task", "-c", "home", "--duration", "15")
-	executeCmdInDir(t, dataDir, "add", "Office task", "-c", "office", "--duration", "15")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Home task", "-c", "home", "--duration", "15")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Office task", "-c", "office", "--duration", "15")
 
 	out, err := executeCmdInDir(t, dataDir, "now", "--context", "home")
 	if err != nil {
@@ -1474,7 +1474,7 @@ func TestIntegrationNowContextFilter(t *testing.T) {
 func TestIntegrationNowJSON(t *testing.T) {
 	dataDir := t.TempDir()
 
-	executeCmdInDir(t, dataDir, "add", "JSON test task", "-p", "high", "-e", "medium", "--duration", "30")
+	_, _ = executeCmdInDir(t, dataDir, "add", "JSON test task", "-p", "high", "-e", "medium", "--duration", "30")
 
 	out, err := executeCmdInDir(t, dataDir, "now", "--json", "-n", "1")
 	if err != nil {
@@ -1504,7 +1504,7 @@ func TestIntegrationNowCountLimit(t *testing.T) {
 	dataDir := t.TempDir()
 
 	for i := 0; i < 10; i++ {
-		executeCmdInDir(t, dataDir, "add", "-q", "Task number "+string(rune('A'+i)), "--duration", "5")
+		_, _ = executeCmdInDir(t, dataDir, "add", "-q", "Task number "+string(rune('A'+i)), "--duration", "5")
 	}
 
 	out, err := executeCmdInDir(t, dataDir, "now", "--json", "-n", "3")
@@ -1526,9 +1526,9 @@ func TestIntegrationNowExcludesDoneTasks(t *testing.T) {
 
 	out, _ := executeCmdInDir(t, dataDir, "add", "-q", "Done task", "--duration", "10")
 	id := strings.TrimSpace(out)
-	executeCmdInDir(t, dataDir, "done", id)
+	_, _ = executeCmdInDir(t, dataDir, "done", id)
 
-	executeCmdInDir(t, dataDir, "add", "Pending task", "--duration", "10")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Pending task", "--duration", "10")
 
 	out, err := executeCmdInDir(t, dataDir, "now", "--json")
 	if err != nil {
@@ -1545,9 +1545,9 @@ func TestIntegrationNowExcludesDoneTasks(t *testing.T) {
 func TestIntegrationPlanTodayBasic(t *testing.T) {
 	dataDir := t.TempDir()
 
-	executeCmdInDir(t, dataDir, "add", "Task A", "-p", "high", "--duration", "30")
-	executeCmdInDir(t, dataDir, "add", "Task B", "-p", "medium", "--duration", "20")
-	executeCmdInDir(t, dataDir, "add", "Task C", "-p", "low", "--duration", "15")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Task A", "-p", "high", "--duration", "30")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Task B", "-p", "medium", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Task C", "-p", "low", "--duration", "15")
 
 	out, err := executeCmdInDir(t, dataDir, "plan", "today", "--time", "60")
 	if err != nil {
@@ -1578,8 +1578,8 @@ func TestIntegrationPlanTodayEmpty(t *testing.T) {
 func TestIntegrationPlanTodayJSON(t *testing.T) {
 	dataDir := t.TempDir()
 
-	executeCmdInDir(t, dataDir, "add", "Plan task A", "-p", "high", "--duration", "30")
-	executeCmdInDir(t, dataDir, "add", "Plan task B", "-p", "medium", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Plan task A", "-p", "high", "--duration", "30")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Plan task B", "-p", "medium", "--duration", "20")
 
 	out, err := executeCmdInDir(t, dataDir, "plan", "today", "--json", "--time", "60")
 	if err != nil {
@@ -1607,9 +1607,9 @@ func TestIntegrationPlanTodayRespectsTimeLimit(t *testing.T) {
 	dataDir := t.TempDir()
 
 	// Add 3 tasks totaling 60 min
-	executeCmdInDir(t, dataDir, "add", "T1", "--duration", "20")
-	executeCmdInDir(t, dataDir, "add", "T2", "--duration", "20")
-	executeCmdInDir(t, dataDir, "add", "T3", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "T1", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "T2", "--duration", "20")
+	_, _ = executeCmdInDir(t, dataDir, "add", "T3", "--duration", "20")
 
 	out, err := executeCmdInDir(t, dataDir, "plan", "today", "--json", "--time", "30")
 	if err != nil {
@@ -1636,7 +1636,7 @@ func TestIntegrationNowWithDependencies(t *testing.T) {
 	idB := strings.TrimSpace(out)
 
 	// B depends on A
-	executeCmdInDir(t, dataDir, "link", idB, idA, "--type", "depends-on")
+	_, _ = executeCmdInDir(t, dataDir, "link", idB, idA, "--type", "depends-on")
 
 	// bt now should not suggest B (unmet dependency)
 	out, err := executeCmdInDir(t, dataDir, "now", "--json")
@@ -1667,4 +1667,3 @@ func TestIntegrationNowWithDependencies(t *testing.T) {
 		t.Error("now should suggest the blocker task")
 	}
 }
-

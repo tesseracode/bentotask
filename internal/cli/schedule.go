@@ -303,15 +303,15 @@ func formatClock(minutesFromStart int) string {
 
 // SuggestionJSON is the JSON representation for bt now / bt plan today.
 type SuggestionJSON struct {
-	TaskID   string               `json:"task_id"`
-	Title    string               `json:"title"`
-	Duration int                  `json:"duration"`
+	TaskID   string                `json:"task_id"`
+	Title    string                `json:"title"`
+	Duration int                   `json:"duration"`
 	Score    engine.ScoreBreakdown `json:"score"`
-	Priority string               `json:"priority,omitempty"`
-	Energy   string               `json:"energy,omitempty"`
-	DueDate  string               `json:"due_date,omitempty"`
-	Tags     []string             `json:"tags"`
-	Contexts []string             `json:"contexts"`
+	Priority string                `json:"priority,omitempty"`
+	Energy   string                `json:"energy,omitempty"`
+	DueDate  string                `json:"due_date,omitempty"`
+	Tags     []string              `json:"tags"`
+	Contexts []string              `json:"contexts"`
 }
 
 // PlanJSON is the JSON representation for bt plan today.
