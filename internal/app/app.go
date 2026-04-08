@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/tesserabox/bentotask/internal/engine"
 	"github.com/tesserabox/bentotask/internal/habit"
 	"github.com/tesserabox/bentotask/internal/model"
 	"github.com/tesserabox/bentotask/internal/recurrence"
@@ -708,6 +709,166 @@ func (a *App) CompleteBoxes() ([]string, error) {
 // CompleteContexts returns all distinct contexts for shell completion.
 func (a *App) CompleteContexts() ([]string, error) {
 	return a.Index.DistinctContexts()
+}
+
+// --- Smart Scheduling ---
+
+// SuggestOptions holds options for the bt now / bt plan today commands.
+type SuggestOptions struct {
+	AvailableTime int          // available minutes (0 = no time limit)
+	Energy        model.Energy // current energy level
+	Context       string       // current context (empty = any)
+}
+
+// Suggest returns the top N task suggestions using the Bento Packing Algorithm.
+// It loads all pending/active tasks, builds habit info and dependency data,
+// then runs the scoring engine.
+func (a *App) Suggest(opts SuggestOptions, n int) ([]engine.Suggestion, error) {
+	req, err := a.buildPackRequest(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return engine.TopN(req, n), nil
+}
+
+// PlanDay packs tasks into the available time using the Bento Packing Algorithm.
+// Returns the packed suggestions and metadata.
+func (a *App) PlanDay(opts SuggestOptions) (*engine.PackResult, error) {
+	req, err := a.buildPackRequest(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	result := engine.Pack(req)
+	return &result, nil
+}
+
+// buildPackRequest constructs a PackRequest from the app's data.
+func (a *App) buildPackRequest(opts SuggestOptions) (engine.PackRequest, error) {
+	now := time.Now().UTC()
+
+	// Load all non-done tasks from the index
+	indexed, err := a.Index.ListTasks(nil)
+	if err != nil {
+		return engine.PackRequest{}, fmt.Errorf("list tasks: %w", err)
+	}
+
+	// Load full tasks from disk (need body for habit completions)
+	var tasks []*model.Task
+	for _, it := range indexed {
+		if it.Status == "done" || it.Status == "cancelled" {
+			continue
+		}
+		task, _, loadErr := a.loadTask(it)
+		if loadErr != nil {
+			continue // skip unreadable tasks
+		}
+		tasks = append(tasks, task)
+	}
+
+	// Build habit info map
+	habitInfoMap := make(map[string]*engine.HabitInfo)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	for _, task := range tasks {
+		if task.Type != model.TaskTypeHabit {
+			continue
+		}
+		completions := habit.ParseCompletionsFromBody(task.Body)
+
+		freqType := "daily"
+		freqTarget := 1
+		if task.Frequency != nil {
+			freqType = task.Frequency.Type
+			if task.Frequency.Target > 0 {
+				freqTarget = task.Frequency.Target
+			}
+		}
+
+		// Check if completed today
+		completedToday := false
+		completionsThisWeek := 0
+		_, thisWeek := now.ISOWeek()
+		thisYear := now.Year()
+		for _, c := range completions {
+			cDate := time.Date(c.CompletedAt.Year(), c.CompletedAt.Month(), c.CompletedAt.Day(), 0, 0, 0, 0, time.UTC)
+			if cDate.Equal(today) {
+				completedToday = true
+			}
+			cYear, cWeek := c.CompletedAt.ISOWeek()
+			if cYear == thisYear && cWeek == thisWeek {
+				completionsThisWeek++
+			}
+		}
+
+		stats := habit.CalculateStreak(completions, freqType)
+
+		habitInfoMap[task.ID] = &engine.HabitInfo{
+			FreqType:            freqType,
+			FreqTarget:          freqTarget,
+			CompletedToday:      completedToday,
+			CompletionsThisWeek: completionsThisWeek,
+			CurrentStreak:       stats.CurrentStreak,
+		}
+	}
+
+	// Build blocked-by map from dependency graph
+	blockedByMap := make(map[string]int)
+	depGraph, err := a.Index.DependencyGraph()
+	if err == nil {
+		// Count how many tasks each task blocks
+		for _, targets := range depGraph {
+			for _, target := range targets {
+				blockedByMap[target]++
+			}
+		}
+		// Invert: we want "how many tasks does THIS task unblock?"
+		// depGraph is source→targets where source depends-on/blocks target
+		// Actually, DependencyGraph stores depends-on edges: source depends on target
+		// So if A depends-on B, completing B unblocks A
+		// We need: for each task T, how many tasks depend on T (are blocked by T)?
+		blockedByMap = make(map[string]int)
+		for source, targets := range depGraph {
+			_ = source
+			for _, target := range targets {
+				// target is depended on by source
+				// So completing target unblocks source
+				blockedByMap[target]++
+			}
+		}
+	}
+
+	// Build unmet dependencies set
+	unmetDeps := make(map[string]bool)
+	for _, task := range tasks {
+		for _, link := range task.Links {
+			if link.Type == model.LinkDependsOn {
+				// Check if the dependency is done
+				depTask, depErr := a.Index.GetTask(link.Target)
+				if depErr != nil || depTask.Status != "done" {
+					unmetDeps[task.ID] = true
+					break
+				}
+			}
+		}
+	}
+
+	energy := opts.Energy
+	if energy == "" {
+		energy = model.EnergyMedium
+	}
+
+	return engine.PackRequest{
+		AvailableTime:     opts.AvailableTime,
+		UserEnergy:        energy,
+		Context:           opts.Context,
+		Now:               now,
+		Weights:           engine.DefaultWeights,
+		Tasks:             tasks,
+		HabitInfoMap:      habitInfoMap,
+		BlockedByMap:      blockedByMap,
+		UnmetDependencies: unmetDeps,
+	}, nil
 }
 
 // --- Helpers ---
