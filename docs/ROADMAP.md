@@ -102,8 +102,8 @@
 ## Milestone 6: REST API & Web UI (Phase 4)
 **Goal**: Visual interface accessible via browser.
 
-- [ ] M6.1 — REST API design & OpenAPI spec
-- [ ] M6.2 — API server implementation
+- [x] M6.1 — REST API design & OpenAPI spec
+- [x] M6.2 — API server implementation
 - [ ] M6.3 — Web UI scaffolding (SvelteKit)
 - [ ] M6.4 — Inbox view
 - [ ] M6.5 — Today view
@@ -113,7 +113,7 @@
 - [ ] M6.9 — Routine player (visual step-through)
 - [ ] M6.10 — Smart mirror / display view
 - [ ] M6.11 — Embed web UI in Go binary (go:embed)
-- [ ] M6.12 — API & UI tests
+- [x] M6.12 — API & UI tests
 
 ---
 
@@ -158,3 +158,4 @@
 | ADR-001 | 2026-04-05 | Tech stack: Go + SvelteKit | :white_check_mark: Approved |
 | ADR-002 | 2026-04-05 | Storage: MD+YAML, file-per-task, SQLite index, ULID, RRULE | :white_check_mark: Approved |
 | ADR-003 | 2026-04-05 | CLI: noun-verb, Charm stack, --json, $EDITOR, completions | :white_check_mark: Approved |
+| ADR-004 | 2026-04-07 | REST API: chi, /api/v1, JSON envelope, localhost, no auth | :white_check_mark: Approved |
