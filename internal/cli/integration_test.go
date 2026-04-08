@@ -50,6 +50,7 @@ func resetFlags() {
 		routineCmd, routineCreateCmd, routineListCmd, routineShowCmd, routinePlayCmd,
 		linkCmd, unlinkCmd,
 		nowCmd, planCmd, planTodayCmd,
+		serveCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
