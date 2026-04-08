@@ -87,15 +87,15 @@
 ## Milestone 5: Smart Scheduling (Phase 3)
 **Goal**: The "What should I do now?" feature works.
 
-- [ ] M5.1 — Bento Packing Algorithm implementation
-- [ ] M5.2 — Urgency scoring function
-- [ ] M5.3 — Energy matching logic
-- [ ] M5.4 — Streak risk detection
-- [ ] M5.5 — `bt now` command (suggest next task)
-- [ ] M5.6 — `bt plan today` command (generate daily plan)
-- [ ] M5.7 — Context support (home, office, errands)
-- [ ] M5.8 — Algorithm benchmarks and tuning
-- [ ] M5.9 — Tests for scheduling algorithm
+- [x] M5.1 — Bento Packing Algorithm implementation
+- [x] M5.2 — Urgency scoring function
+- [x] M5.3 — Energy matching logic
+- [x] M5.4 — Streak risk detection
+- [x] M5.5 — `bt now` command (suggest next task)
+- [x] M5.6 — `bt plan today` command (generate daily plan)
+- [x] M5.7 — Context support (home, office, errands)
+- [x] M5.8 — Algorithm benchmarks and tuning
+- [x] M5.9 — Tests for scheduling algorithm
 
 ---
 
