@@ -104,12 +104,12 @@
 
 - [x] M6.1 — REST API design & OpenAPI spec
 - [x] M6.2 — API server implementation
-- [ ] M6.3 — Web UI scaffolding (SvelteKit)
-- [ ] M6.4 — Inbox view
-- [ ] M6.5 — Today view
+- [x] M6.3 — Web UI scaffolding (SvelteKit)
+- [x] M6.4 — Inbox view
+- [x] M6.5 — Today view
 - [ ] M6.6 — Calendar view
 - [ ] M6.7 — Kanban view
-- [ ] M6.8 — Habits dashboard (heatmaps, charts)
+- [x] M6.8 — Habits dashboard (heatmaps, charts)
 - [ ] M6.9 — Routine player (visual step-through)
 - [ ] M6.10 — Smart mirror / display view
 - [ ] M6.11 — Embed web UI in Go binary (go:embed)
