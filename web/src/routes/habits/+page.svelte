@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { habits, type TaskJSON, type HabitStats } from '$lib/api';
+	import { habits, tasks, type TaskJSON, type HabitStats, type UpdateTaskRequest } from '$lib/api';
 
 	interface HabitWithStats {
 		habit: TaskJSON;
@@ -20,12 +20,17 @@
 	let newEnergy = $state('');
 	let showAddForm = $state(false);
 
+	// Edit state
+	let editingId: string | null = $state(null);
+	let editTitle = $state('');
+	let editPriority = $state('');
+	let editEnergy = $state('');
+
 	async function loadHabits() {
 		error = '';
 		try {
 			const res = await habits.list();
 			items = res.items.map((h) => ({ habit: h, stats: null, loadingStats: true }));
-			// Load stats in parallel (batch for performance)
 			const statsPromises = items.map(async (item, idx) => {
 				try {
 					const res = await habits.stats(item.habit.id);
@@ -70,7 +75,6 @@
 		error = '';
 		try {
 			await habits.log(id);
-			// Reload just this habit's stats
 			const idx = items.findIndex((i) => i.habit.id === id);
 			if (idx >= 0) {
 				items[idx] = { ...items[idx], loadingStats: true };
@@ -86,15 +90,57 @@
 		}
 	}
 
+	async function deleteHabit(id: string) {
+		error = '';
+		try {
+			await tasks.delete(id);
+			items = items.filter((i) => i.habit.id !== id);
+			if (editingId === id) editingId = null;
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to delete habit';
+		}
+	}
+
+	function startEdit(habit: TaskJSON) {
+		editingId = habit.id;
+		editTitle = habit.title;
+		editPriority = habit.priority ?? '';
+		editEnergy = habit.energy ?? '';
+	}
+
+	function cancelEdit() {
+		editingId = null;
+	}
+
+	async function saveEdit() {
+		if (!editingId) return;
+		error = '';
+		const item = items.find((i) => i.habit.id === editingId);
+		if (!item) return;
+
+		const changes: UpdateTaskRequest = {};
+		if (editTitle !== item.habit.title) changes.title = editTitle;
+		if (editPriority !== (item.habit.priority ?? '')) changes.priority = editPriority;
+		if (editEnergy !== (item.habit.energy ?? '')) changes.energy = editEnergy;
+
+		try {
+			await tasks.update(editingId, changes);
+			editingId = null;
+			loading = true;
+			await loadHabits();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to update habit';
+		}
+	}
+
 	function isCompletedToday(stats: HabitStats | null): boolean {
 		if (!stats) return false;
-		// If we just logged it, the streak should be active.
-		// A daily habit with current_streak > 0 that was just logged means completed today.
-		// We rely on the API: if total_completions > 0 and current_streak > 0, it's likely done.
-		// Better heuristic: the stats endpoint returns completion_rate > 0 meaning recent completions.
-		// For now, we check if the habit has any completions and an active streak.
-		// The real check would need a "completed_today" flag from the API — for now we approximate.
 		return stats.current_streak > 0 && stats.total_completions > 0;
+	}
+
+	function formatRate(stats: HabitStats | null): string {
+		if (!stats || stats.total_completions === 0) return '0%';
+		return `${Math.round((stats.completion_rate || 0) * 100)}%`;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -189,36 +235,67 @@
 						{/if}
 					</div>
 					<div class="habit-body">
-						<span class="habit-title">{habit.title}</span>
-						<div class="habit-meta">
-							{#if habit.priority && habit.priority !== 'none'}
-								<span class="badge priority-{habit.priority}">{habit.priority}</span>
-							{/if}
-							{#if habit.energy}
-								<span class="badge energy">{habit.energy}</span>
-							{/if}
-						</div>
-						{#if loadingStats}
-							<div class="stats-row">
-								<span class="stat-loading">Loading stats...</span>
+						{#if editingId === habit.id}
+							<div class="edit-inline">
+								<input type="text" bind:value={editTitle} class="edit-title" />
+								<div class="edit-row">
+									<select bind:value={editPriority}>
+										<option value="">No priority</option>
+										<option value="low">Low</option>
+										<option value="medium">Medium</option>
+										<option value="high">High</option>
+										<option value="urgent">Urgent</option>
+									</select>
+									<select bind:value={editEnergy}>
+										<option value="">No energy</option>
+										<option value="low">Low</option>
+										<option value="medium">Medium</option>
+										<option value="high">High</option>
+									</select>
+								</div>
+								<div class="edit-actions">
+									<button class="save-btn" onclick={saveEdit}>Save</button>
+									<button class="cancel-btn" onclick={cancelEdit}>Cancel</button>
+								</div>
 							</div>
-						{:else if stats}
-							<div class="stats-row">
-								<span class="stat" title="Current streak">🔥 {stats.current_streak}</span>
-								<span class="stat" title="Longest streak">🏆 {stats.longest_streak}</span>
-								<span class="stat" title="Total completions">✅ {stats.total_completions}</span>
-								<span class="stat" title="Completion rate ({stats.rate_period_days}d)">{Math.round(stats.completion_rate * 100)}%</span>
+						{:else}
+							<span class="habit-title">{habit.title}</span>
+							<div class="habit-meta">
+								{#if habit.priority && habit.priority !== 'none'}
+									<span class="badge priority-{habit.priority}">{habit.priority}</span>
+								{/if}
+								{#if habit.energy}
+									<span class="badge energy">{habit.energy}</span>
+								{/if}
 							</div>
+							{#if loadingStats}
+								<div class="stats-row">
+									<span class="stat-loading">Loading stats...</span>
+								</div>
+							{:else if stats}
+								<div class="stats-row">
+									<span class="stat" title="Current streak">🔥 {stats.current_streak}</span>
+									<span class="stat" title="Longest streak">🏆 {stats.longest_streak}</span>
+									<span class="stat" title="Total completions">✅ {stats.total_completions}</span>
+									<span class="stat" title="Completion rate ({stats.rate_period_days}d)">{formatRate(stats)}</span>
+								</div>
+							{/if}
 						{/if}
 					</div>
-					<button
-						class="log-btn"
-						class:log-done={done}
-						onclick={() => logHabit(habit.id)}
-						title={done ? 'Already logged today' : 'Log completion'}
-					>
-						{done ? '✓ Done' : 'Log'}
-					</button>
+					<div class="habit-actions">
+						<button
+							class="log-btn"
+							class:log-done={done}
+							onclick={() => logHabit(habit.id)}
+							title={done ? 'Already logged today' : 'Log completion'}
+						>
+							{done ? '✓' : 'Log'}
+						</button>
+						{#if editingId !== habit.id}
+							<button class="action-btn" onclick={() => startEdit(habit)} title="Edit">✎</button>
+							<button class="action-btn delete" onclick={() => deleteHabit(habit.id)} title="Delete">&times;</button>
+						{/if}
+					</div>
 				</li>
 			{/each}
 		</ul>
@@ -229,7 +306,6 @@
 	.view { max-width: 700px; }
 	h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
 
-	/* Add bar (simple mode) */
 	.add-bar {
 		display: flex;
 		gap: 0.5rem;
@@ -260,7 +336,7 @@
 
 	.add-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-	/* Add form (expanded) */
+	/* Add form */
 	.add-form {
 		background: #141414;
 		border: 1px solid #252525;
@@ -320,7 +396,7 @@
 	.toggle-group button:last-child { border-right: none; }
 	.toggle-group button.active { background: #2563eb; color: white; }
 
-	.form-actions {
+	.form-actions, .edit-actions {
 		display: flex;
 		gap: 0.5rem;
 		margin-top: 0.25rem;
@@ -360,7 +436,6 @@
 
 	.empty { color: #666; text-align: center; padding: 3rem; }
 
-	/* Habit list */
 	.habit-list { list-style: none; }
 
 	.habit-item {
@@ -388,29 +463,13 @@
 		border-radius: 50%;
 	}
 
-	.done-icon {
-		background: #1a3a1a;
-		color: #4ade80;
-		border: 1px solid #2a5a2a;
-	}
-
-	.at-risk-icon {
-		background: #3a2a1a;
-		color: #ffaa6b;
-		border: 1px solid #5c3a1a;
-	}
-
-	.neutral-icon {
-		color: #555;
-		border: 1px solid #333;
-	}
+	.done-icon { background: #1a3a1a; color: #4ade80; border: 1px solid #2a5a2a; }
+	.at-risk-icon { background: #3a2a1a; color: #ffaa6b; border: 1px solid #5c3a1a; }
+	.neutral-icon { color: #555; border: 1px solid #333; }
 
 	.habit-body { flex: 1; min-width: 0; }
 
-	.habit-title {
-		display: block;
-		font-size: 0.95rem;
-	}
+	.habit-title { display: block; font-size: 0.95rem; }
 
 	.habit-meta {
 		display: flex;
@@ -424,14 +483,49 @@
 		margin-top: 0.35rem;
 	}
 
-	.stat {
-		font-size: 0.75rem;
-		color: #888;
+	.stat { font-size: 0.75rem; color: #888; }
+	.stat-loading { font-size: 0.7rem; color: #555; }
+
+	/* Edit inline */
+	.edit-inline {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
 	}
 
-	.stat-loading {
-		font-size: 0.7rem;
-		color: #555;
+	.edit-title {
+		padding: 0.35rem 0.5rem;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #e0e0e0;
+		font-size: 0.9rem;
+	}
+
+	.edit-title:focus { outline: none; border-color: #555; }
+
+	.edit-row {
+		display: flex;
+		gap: 0.4rem;
+	}
+
+	.edit-row select {
+		padding: 0.3rem 0.5rem;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #ccc;
+		font-size: 0.8rem;
+	}
+
+	.edit-row select:focus { outline: none; border-color: #555; }
+
+	/* Actions column */
+	.habit-actions {
+		display: flex;
+		gap: 0.3rem;
+		align-items: center;
+		flex-shrink: 0;
 	}
 
 	.log-btn {
@@ -442,8 +536,6 @@
 		color: #4ade80;
 		cursor: pointer;
 		font-size: 0.8rem;
-		flex-shrink: 0;
-		align-self: center;
 	}
 
 	.log-btn:hover { background: #2a5a2a; }
@@ -453,4 +545,17 @@
 		border-color: #333;
 		color: #666;
 	}
+
+	.action-btn {
+		background: none;
+		border: none;
+		color: #555;
+		font-size: 1rem;
+		cursor: pointer;
+		padding: 0.2rem 0.3rem;
+		line-height: 1;
+	}
+
+	.action-btn:hover { color: #ccc; }
+	.action-btn.delete:hover { color: #ff6b6b; }
 </style>
