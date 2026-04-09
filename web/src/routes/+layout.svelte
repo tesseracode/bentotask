@@ -12,6 +12,7 @@
 		{ href: '/', label: 'Inbox', icon: '📥' },
 		{ href: '/today', label: 'Today', icon: '📅' },
 		{ href: '/habits', label: 'Habits', icon: '🔥' },
+		{ href: '/mirror', label: 'Mirror', icon: '🪞' },
 		...(showDesignRoute ? [{ href: '/design', label: 'Design', icon: '🎨' }] : []),
 	];
 
