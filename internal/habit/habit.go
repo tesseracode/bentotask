@@ -22,11 +22,11 @@ type Completion struct {
 
 // Stats holds computed statistics for a habit.
 type Stats struct {
-	CurrentStreak    int
-	LongestStreak    int
-	TotalCompletions int
-	CompletionRate   float64 // 0.0–1.0 over the rate period
-	RatePeriodDays   int     // number of days the rate covers
+	CurrentStreak    int     `json:"current_streak"`
+	LongestStreak    int     `json:"longest_streak"`
+	TotalCompletions int     `json:"total_completions"`
+	CompletionRate   float64 `json:"completion_rate"`  // 0.0–1.0 over the rate period
+	RatePeriodDays   int     `json:"rate_period_days"` // number of days the rate covers
 }
 
 // CalculateStreak computes streak information from a sorted list of completions
