@@ -69,6 +69,14 @@ export interface PlanJSON {
 	available_time: number;
 }
 
+export interface HabitStats {
+	current_streak: number;
+	longest_streak: number;
+	total_completions: number;
+	completion_rate: number;
+	rate_period_days: number;
+}
+
 export interface Collection<T> {
 	items: T[];
 	count: number;
@@ -156,7 +164,7 @@ export const habits = {
 	log: (id: string, req?: { duration?: number; note?: string }) =>
 		request<TaskJSON>('POST', `/habits/${id}/log`, req ?? {}),
 
-	stats: (id: string) => request<{ task: TaskJSON; stats: Record<string, unknown> }>('GET', `/habits/${id}/stats`)
+	stats: (id: string) => request<{ task: TaskJSON; stats: HabitStats }>('GET', `/habits/${id}/stats`)
 };
 
 // --- Routines ---

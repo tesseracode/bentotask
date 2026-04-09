@@ -1,15 +1,49 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { tasks, type TaskJSON } from '$lib/api';
+	import { tasks, type TaskJSON, type UpdateTaskRequest } from '$lib/api';
 
 	let taskList: TaskJSON[] = $state([]);
 	let newTitle = $state('');
 	let loading = $state(true);
 	let error = $state('');
 
+	// Filters
+	let filterPriority = $state('');
+	let filterEnergy = $state('');
+	let filterTag = $state('');
+	let sortBy: 'created' | 'priority' = $state('created');
+
+	// Expanded / Edit state
+	let expandedId: string | null = $state(null);
+	let expandedTask: TaskJSON | null = $state(null);
+	let editing = $state(false);
+	let editTitle = $state('');
+	let editPriority = $state('');
+	let editEnergy = $state('');
+	let editDue = $state('');
+	let editTags = $state('');
+
+	const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3, none: 4, '': 5 };
+
+	let sortedTasks = $derived.by(() => {
+		if (sortBy === 'priority') {
+			return [...taskList].sort((a, b) => {
+				const pa = priorityOrder[a.priority ?? ''] ?? 5;
+				const pb = priorityOrder[b.priority ?? ''] ?? 5;
+				return pa - pb;
+			});
+		}
+		return taskList;
+	});
+
 	async function loadTasks() {
+		error = '';
 		try {
-			const res = await tasks.list({ status: 'pending' });
+			const params: Record<string, string> = { status: 'pending' };
+			if (filterPriority) params.priority = filterPriority;
+			if (filterEnergy) params.energy = filterEnergy;
+			if (filterTag) params.tag = filterTag;
+			const res = await tasks.list(params);
 			taskList = res.items;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load tasks';
@@ -35,6 +69,7 @@
 		try {
 			await tasks.done(id);
 			taskList = taskList.filter((t) => t.id !== id);
+			if (expandedId === id) { expandedId = null; expandedTask = null; }
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to complete task';
 		}
@@ -45,9 +80,68 @@
 		try {
 			await tasks.delete(id);
 			taskList = taskList.filter((t) => t.id !== id);
+			if (expandedId === id) { expandedId = null; expandedTask = null; }
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to delete task';
 		}
+	}
+
+	async function toggleExpand(id: string) {
+		if (expandedId === id) {
+			expandedId = null;
+			expandedTask = null;
+			editing = false;
+			return;
+		}
+		error = '';
+		expandedId = id;
+		editing = false;
+		try {
+			expandedTask = await tasks.get(id);
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to load task details';
+			expandedId = null;
+			expandedTask = null;
+		}
+	}
+
+	function startEdit() {
+		if (!expandedTask) return;
+		editing = true;
+		editTitle = expandedTask.title;
+		editPriority = expandedTask.priority ?? '';
+		editEnergy = expandedTask.energy ?? '';
+		editDue = expandedTask.due_date ?? '';
+		editTags = expandedTask.tags.join(', ');
+	}
+
+	function cancelEdit() {
+		editing = false;
+	}
+
+	async function saveEdit() {
+		if (!expandedTask) return;
+		error = '';
+		const changes: UpdateTaskRequest = {};
+		if (editTitle !== expandedTask.title) changes.title = editTitle;
+		if (editPriority !== (expandedTask.priority ?? '')) changes.priority = editPriority;
+		if (editEnergy !== (expandedTask.energy ?? '')) changes.energy = editEnergy;
+		if (editDue !== (expandedTask.due_date ?? '')) changes.due_date = editDue;
+		const newTags = editTags.split(',').map((t) => t.trim()).filter(Boolean);
+		if (JSON.stringify(newTags) !== JSON.stringify(expandedTask.tags)) changes.tags = newTags;
+
+		try {
+			expandedTask = await tasks.update(expandedTask.id, changes);
+			editing = false;
+			await loadTasks();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to update task';
+		}
+	}
+
+	function applyFilters() {
+		loading = true;
+		loadTasks();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -77,23 +171,51 @@
 		<button onclick={addTask} disabled={!newTitle.trim()}>Add</button>
 	</div>
 
+	<div class="filter-bar">
+		<select bind:value={filterPriority} onchange={applyFilters}>
+			<option value="">All priorities</option>
+			<option value="urgent">Urgent</option>
+			<option value="high">High</option>
+			<option value="medium">Medium</option>
+			<option value="low">Low</option>
+		</select>
+		<select bind:value={filterEnergy} onchange={applyFilters}>
+			<option value="">All energy</option>
+			<option value="low">Low</option>
+			<option value="medium">Medium</option>
+			<option value="high">High</option>
+		</select>
+		<input
+			type="text"
+			placeholder="Filter by tag..."
+			class="tag-filter"
+			bind:value={filterTag}
+			onchange={applyFilters}
+		/>
+		<button class="sort-btn" onclick={() => { sortBy = sortBy === 'created' ? 'priority' : 'created'; }} title="Toggle sort">
+			Sort: {sortBy === 'created' ? 'Date' : 'Priority'}
+		</button>
+	</div>
+
 	{#if error}
 		<div class="error">{error}</div>
 	{/if}
 
 	{#if loading}
 		<p class="empty">Loading...</p>
-	{:else if taskList.length === 0}
+	{:else if sortedTasks.length === 0}
 		<p class="empty">No pending tasks. Add one above!</p>
 	{:else}
 		<ul class="task-list">
-			{#each taskList as task (task.id)}
-				<li class="task-item">
+			{#each sortedTasks as task (task.id)}
+				<li class="task-item" class:expanded={expandedId === task.id}>
 					<button class="check-btn" onclick={() => completeTask(task.id)} title="Complete">
 						<span class="check-circle"></span>
 					</button>
 					<div class="task-body">
-						<span class="task-title">{task.title}</span>
+						<button class="task-title-btn" onclick={() => toggleExpand(task.id)}>
+							{task.title}
+						</button>
 						<div class="task-meta">
 							{#if task.priority && task.priority !== 'none'}
 								<span class="badge {priorityClass(task.priority)}">{task.priority}</span>
@@ -108,6 +230,75 @@
 								<span class="badge tag">#{tag}</span>
 							{/each}
 						</div>
+
+						{#if expandedId === task.id && expandedTask}
+							<div class="detail-panel">
+								{#if !editing}
+									<div class="detail-grid">
+										<span class="detail-label">ID</span>
+										<span class="detail-value mono">{expandedTask.id}</span>
+										{#if expandedTask.due_date}
+											<span class="detail-label">Due</span>
+											<span class="detail-value">{expandedTask.due_date}</span>
+										{/if}
+										{#if expandedTask.contexts.length > 0}
+											<span class="detail-label">Contexts</span>
+											<span class="detail-value">{expandedTask.contexts.join(', ')}</span>
+										{/if}
+										<span class="detail-label">File</span>
+										<span class="detail-value mono">{expandedTask.file_path}</span>
+										<span class="detail-label">Created</span>
+										<span class="detail-value">{new Date(expandedTask.created_at).toLocaleString()}</span>
+										<span class="detail-label">Updated</span>
+										<span class="detail-value">{new Date(expandedTask.updated_at).toLocaleString()}</span>
+									</div>
+									{#if expandedTask.body}
+										<pre class="detail-body">{expandedTask.body}</pre>
+									{/if}
+									<button class="edit-btn" onclick={startEdit}>Edit</button>
+								{:else}
+									<div class="edit-form">
+										<label>
+											Title
+											<input type="text" bind:value={editTitle} />
+										</label>
+										<div class="edit-row">
+											<label>
+												Priority
+												<select bind:value={editPriority}>
+													<option value="">None</option>
+													<option value="low">Low</option>
+													<option value="medium">Medium</option>
+													<option value="high">High</option>
+													<option value="urgent">Urgent</option>
+												</select>
+											</label>
+											<label>
+												Energy
+												<select bind:value={editEnergy}>
+													<option value="">None</option>
+													<option value="low">Low</option>
+													<option value="medium">Medium</option>
+													<option value="high">High</option>
+												</select>
+											</label>
+											<label>
+												Due date
+												<input type="date" bind:value={editDue} />
+											</label>
+										</div>
+										<label>
+											Tags <span class="hint">(comma-separated)</span>
+											<input type="text" bind:value={editTags} />
+										</label>
+										<div class="edit-actions">
+											<button class="save-btn" onclick={saveEdit}>Save</button>
+											<button class="cancel-btn" onclick={cancelEdit}>Cancel</button>
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 					<button class="delete-btn" onclick={() => deleteTask(task.id)} title="Delete">&times;</button>
 				</li>
@@ -123,7 +314,7 @@
 	.add-bar {
 		display: flex;
 		gap: 0.5rem;
-		margin-bottom: 1.5rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.add-bar input {
@@ -136,10 +327,7 @@
 		font-size: 0.9rem;
 	}
 
-	.add-bar input:focus {
-		outline: none;
-		border-color: #555;
-	}
+	.add-bar input:focus { outline: none; border-color: #555; }
 
 	.add-bar button {
 		padding: 0.6rem 1.2rem;
@@ -151,10 +339,41 @@
 		font-size: 0.9rem;
 	}
 
-	.add-bar button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+	.add-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	/* Filter bar */
+	.filter-bar {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
 	}
+
+	.filter-bar select,
+	.filter-bar .tag-filter {
+		padding: 0.4rem 0.6rem;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 6px;
+		color: #ccc;
+		font-size: 0.8rem;
+	}
+
+	.filter-bar .tag-filter { width: 120px; }
+	.filter-bar select:focus, .filter-bar .tag-filter:focus { outline: none; border-color: #555; }
+
+	.sort-btn {
+		padding: 0.4rem 0.6rem;
+		background: #252525;
+		border: 1px solid #333;
+		border-radius: 6px;
+		color: #999;
+		cursor: pointer;
+		font-size: 0.8rem;
+		margin-left: auto;
+	}
+
+	.sort-btn:hover { color: #fff; border-color: #555; }
 
 	.error {
 		padding: 0.6rem;
@@ -166,15 +385,9 @@
 		font-size: 0.85rem;
 	}
 
-	.empty {
-		color: #666;
-		text-align: center;
-		padding: 3rem;
-	}
+	.empty { color: #666; text-align: center; padding: 3rem; }
 
-	.task-list {
-		list-style: none;
-	}
+	.task-list { list-style: none; }
 
 	.task-item {
 		display: flex;
@@ -183,6 +396,8 @@
 		padding: 0.75rem 0;
 		border-bottom: 1px solid #1f1f1f;
 	}
+
+	.task-item.expanded { background: #141414; margin: 0 -0.5rem; padding: 0.75rem 0.5rem; border-radius: 6px; }
 
 	.check-btn {
 		background: none;
@@ -202,19 +417,23 @@
 		transition: border-color 0.15s;
 	}
 
-	.check-btn:hover .check-circle {
-		border-color: #4ade80;
-	}
+	.check-btn:hover .check-circle { border-color: #4ade80; }
 
-	.task-body {
-		flex: 1;
-		min-width: 0;
-	}
+	.task-body { flex: 1; min-width: 0; }
 
-	.task-title {
+	.task-title-btn {
 		display: block;
+		background: none;
+		border: none;
+		color: #e0e0e0;
 		font-size: 0.95rem;
+		cursor: pointer;
+		text-align: left;
+		padding: 0;
+		width: 100%;
 	}
+
+	.task-title-btn:hover { color: #fff; }
 
 	.task-meta {
 		display: flex;
@@ -234,7 +453,109 @@
 		flex-shrink: 0;
 	}
 
-	.delete-btn:hover {
-		color: #ff6b6b;
+	.delete-btn:hover { color: #ff6b6b; }
+
+	/* Detail panel */
+	.detail-panel {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #252525;
+	}
+
+	.detail-grid {
+		display: grid;
+		grid-template-columns: 80px 1fr;
+		gap: 0.3rem 0.75rem;
+		font-size: 0.8rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.detail-label { color: #666; }
+	.detail-value { color: #bbb; }
+	.mono { font-family: monospace; font-size: 0.75rem; }
+
+	.detail-body {
+		background: #1a1a1a;
+		border: 1px solid #252525;
+		border-radius: 4px;
+		padding: 0.6rem;
+		font-size: 0.8rem;
+		color: #bbb;
+		white-space: pre-wrap;
+		margin-bottom: 0.75rem;
+		font-family: inherit;
+	}
+
+	.edit-btn {
+		padding: 0.35rem 0.7rem;
+		background: #252525;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #ccc;
+		cursor: pointer;
+		font-size: 0.8rem;
+	}
+
+	.edit-btn:hover { border-color: #2563eb; color: #fff; }
+
+	/* Edit form */
+	.edit-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+
+	.edit-form label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		font-size: 0.75rem;
+		color: #888;
+	}
+
+	.hint { color: #555; }
+
+	.edit-form input, .edit-form select {
+		padding: 0.4rem 0.6rem;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #e0e0e0;
+		font-size: 0.85rem;
+	}
+
+	.edit-form input:focus, .edit-form select:focus { outline: none; border-color: #555; }
+
+	.edit-row {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.edit-row label { flex: 1; }
+
+	.edit-actions {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.25rem;
+	}
+
+	.save-btn {
+		padding: 0.4rem 0.8rem;
+		background: #2563eb;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.8rem;
+	}
+
+	.cancel-btn {
+		padding: 0.4rem 0.8rem;
+		background: #252525;
+		color: #ccc;
+		border: 1px solid #333;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.8rem;
 	}
 </style>
