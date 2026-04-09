@@ -9,6 +9,7 @@
 		{ href: '/', label: 'Inbox', icon: '📥' },
 		{ href: '/today', label: 'Today', icon: '📅' },
 		{ href: '/habits', label: 'Habits', icon: '🔥' },
+		{ href: '/design', label: 'Design', icon: '🎨' },
 	];
 
 	function isActive(href: string): boolean {
