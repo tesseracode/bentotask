@@ -10,11 +10,21 @@ GO        := go
 GOTEST    := $(GO) test
 LINT      := golangci-lint
 
-.PHONY: build test lint clean fmt help
+.PHONY: build build-go web test lint clean fmt help
 
-## build: Compile the bt binary
-build:
+## build: Build web UI + Go binary (full release build)
+build: web
 	$(GO) build $(LDFLAGS) -o $(BINARY) ./cmd/bt/
+
+## build-go: Build Go binary only (skip web, for fast iteration)
+build-go:
+	$(GO) build $(LDFLAGS) -o $(BINARY) ./cmd/bt/
+
+## web: Build the SvelteKit web UI and copy to embed directory
+web:
+	cd web && npm run build
+	rm -rf internal/api/static
+	cp -r web/build internal/api/static
 
 ## test: Run all tests
 test:
@@ -32,6 +42,7 @@ fmt:
 ## clean: Remove build artifacts
 clean:
 	rm -f $(BINARY)
+	rm -rf internal/api/static
 	$(GO) clean
 
 ## help: Show this help message

@@ -52,5 +52,8 @@ func (s *Server) buildRouter() chi.Router {
 		r.Get("/meta/contexts", s.handleMetaContexts)
 	})
 
+	// Static files (SvelteKit build) — catch-all AFTER /api
+	r.Handle("/*", staticFileServer())
+
 	return r
 }
