@@ -29,12 +29,12 @@ var DefaultWeights = Weights{
 // Weights holds the scoring weights for the Bento Packing Algorithm.
 // All values should be in [0, 1] and ideally sum to ~1.0.
 type Weights struct {
-	Urgency          float64
-	Priority         float64
-	EnergyMatch      float64
-	StreakRisk       float64
-	AgeBoost         float64
-	DependencyUnlock float64
+	Urgency          float64 `json:"urgency"`
+	Priority         float64 `json:"priority"`
+	EnergyMatch      float64 `json:"energy_match"`
+	StreakRisk       float64 `json:"streak_risk"`
+	AgeBoost         float64 `json:"age_boost"`
+	DependencyUnlock float64 `json:"dependency_unlock"`
 }
 
 // ScoreBreakdown holds the individual factor scores and the final

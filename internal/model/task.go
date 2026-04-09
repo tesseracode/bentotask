@@ -93,16 +93,16 @@ type HabitFrequency struct {
 
 // RoutineStep is one step in a routine's ordered sequence.
 type RoutineStep struct {
-	Title    string `yaml:"title"`              // Display name for this step
-	Duration int    `yaml:"duration,omitempty"` // Estimated duration in minutes (0 = untimed)
-	Ref      string `yaml:"ref,omitempty"`      // Optional ULID of a linked task/habit
-	Optional bool   `yaml:"optional,omitempty"` // Can this step be skipped?
+	Title    string `yaml:"title"              json:"title"`              // Display name for this step
+	Duration int    `yaml:"duration,omitempty" json:"duration,omitempty"` // Estimated duration in minutes (0 = untimed)
+	Ref      string `yaml:"ref,omitempty"      json:"ref,omitempty"`      // Optional ULID of a linked task/habit
+	Optional bool   `yaml:"optional,omitempty" json:"optional,omitempty"` // Can this step be skipped?
 }
 
 // RoutineSchedule defines when a routine should be triggered.
 type RoutineSchedule struct {
-	Time string   `yaml:"time,omitempty"` // Time of day (e.g., "07:00")
-	Days []string `yaml:"days,omitempty"` // Days of week (e.g., ["mon","tue","wed"])
+	Time string   `yaml:"time,omitempty" json:"time,omitempty"` // Time of day (e.g., "07:00")
+	Days []string `yaml:"days,omitempty" json:"days,omitempty"` // Days of week (e.g., ["mon","tue","wed"])
 }
 
 // Task is the core data structure for BentoTask. It represents a task,
