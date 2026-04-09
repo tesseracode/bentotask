@@ -1,0 +1,24 @@
+/* Shared badge styles used across views */
+.badge {
+	font-size: 0.7rem;
+	padding: 0.15rem 0.45rem;
+	border-radius: 4px;
+	background: #252525;
+	color: #888;
+}
+
+.badge.priority-urgent,
+.priority-urgent { background: #5c1a1a; color: #ff6b6b; }
+.badge.priority-high,
+.priority-high { background: #5c3a1a; color: #ffaa6b; }
+.badge.priority-medium,
+.priority-medium { background: #4a4a1a; color: #e0d06b; }
+.badge.priority-low,
+.priority-low { background: #1a3a1a; color: #6bcc6b; }
+
+.badge.energy,
+.energy { background: #1a2a4a; color: #6b9bff; }
+.badge.due,
+.due { background: #3a2a1a; color: #ddb06b; }
+.badge.tag,
+.tag { background: #2a1a3a; color: #b06bdd; }

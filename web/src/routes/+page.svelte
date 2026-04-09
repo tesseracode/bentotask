@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { tasks, type TaskJSON } from '$lib/api';
 
 	let taskList: TaskJSON[] = $state([]);
@@ -19,6 +20,7 @@
 
 	async function addTask() {
 		if (!newTitle.trim()) return;
+		error = '';
 		try {
 			await tasks.create({ title: newTitle.trim() });
 			newTitle = '';
@@ -29,6 +31,7 @@
 	}
 
 	async function completeTask(id: string) {
+		error = '';
 		try {
 			await tasks.done(id);
 			taskList = taskList.filter((t) => t.id !== id);
@@ -38,6 +41,7 @@
 	}
 
 	async function deleteTask(id: string) {
+		error = '';
 		try {
 			await tasks.delete(id);
 			taskList = taskList.filter((t) => t.id !== id);
@@ -55,7 +59,7 @@
 		return `priority-${p}`;
 	}
 
-	$effect(() => {
+	onMount(() => {
 		loadTasks();
 	});
 </script>
@@ -218,23 +222,6 @@
 		gap: 0.35rem;
 		margin-top: 0.3rem;
 	}
-
-	.badge {
-		font-size: 0.7rem;
-		padding: 0.15rem 0.45rem;
-		border-radius: 4px;
-		background: #252525;
-		color: #888;
-	}
-
-	.priority-urgent { background: #5c1a1a; color: #ff6b6b; }
-	.priority-high { background: #5c3a1a; color: #ffaa6b; }
-	.priority-medium { background: #4a4a1a; color: #e0d06b; }
-	.priority-low { background: #1a3a1a; color: #6bcc6b; }
-
-	.energy { background: #1a2a4a; color: #6b9bff; }
-	.due { background: #3a2a1a; color: #ddb06b; }
-	.tag { background: #2a1a3a; color: #b06bdd; }
 
 	.delete-btn {
 		background: none;

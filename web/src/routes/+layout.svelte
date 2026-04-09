@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
+	import '$lib/badges.css';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -8,6 +10,12 @@
 		{ href: '/today', label: 'Today', icon: '📅' },
 		{ href: '/habits', label: 'Habits', icon: '🔥' },
 	];
+
+	function isActive(href: string): boolean {
+		if (href === '/') return page.url.pathname === '/';
+		return page.url.pathname.startsWith(href);
+	}
+
 </script>
 
 <svelte:head>
@@ -24,7 +32,7 @@
 		<ul class="nav-list">
 			{#each navItems as item}
 				<li>
-					<a href={item.href} class="nav-link">
+					<a href={item.href} class="nav-link" class:active={isActive(item.href)}>
 						<span class="nav-icon">{item.icon}</span>
 						<span class="nav-label">{item.label}</span>
 					</a>
@@ -97,6 +105,12 @@
 	.nav-link:hover {
 		background: #252525;
 		color: #fff;
+	}
+
+	.nav-link.active {
+		background: #1e293b;
+		color: #fff;
+		border-right: 2px solid #2563eb;
 	}
 
 	.nav-icon {

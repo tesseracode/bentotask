@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { habits, type TaskJSON } from '$lib/api';
 
 	let habitList: TaskJSON[] = $state([]);
@@ -19,6 +20,7 @@
 
 	async function addHabit() {
 		if (!newTitle.trim()) return;
+		error = '';
 		try {
 			await habits.create({ title: newTitle.trim(), freq_type: 'daily', freq_target: 1 });
 			newTitle = '';
@@ -29,6 +31,7 @@
 	}
 
 	async function logHabit(id: string) {
+		error = '';
 		try {
 			await habits.log(id);
 			await loadHabits();
@@ -41,7 +44,7 @@
 		if (e.key === 'Enter') addHabit();
 	}
 
-	$effect(() => {
+	onMount(() => {
 		loadHabits();
 	});
 </script>
@@ -165,20 +168,6 @@
 		gap: 0.35rem;
 		margin-top: 0.25rem;
 	}
-
-	.badge {
-		font-size: 0.65rem;
-		padding: 0.1rem 0.35rem;
-		border-radius: 3px;
-		background: #252525;
-		color: #888;
-	}
-
-	.priority-urgent { background: #5c1a1a; color: #ff6b6b; }
-	.priority-high { background: #5c3a1a; color: #ffaa6b; }
-	.priority-medium { background: #4a4a1a; color: #e0d06b; }
-	.priority-low { background: #1a3a1a; color: #6bcc6b; }
-	.energy { background: #1a2a4a; color: #6b9bff; }
 
 	.log-btn {
 		padding: 0.4rem 0.8rem;

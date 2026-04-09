@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { scheduling, type SuggestionJSON, type PlanJSON } from '$lib/api';
 
 	let suggestions: SuggestionJSON[] = $state([]);
@@ -67,7 +68,7 @@
 		});
 	}
 
-	$effect(() => {
+	onMount(() => {
 		loadSuggestions();
 	});
 </script>
@@ -210,20 +211,6 @@
 	}
 
 	.duration { font-size: 0.75rem; color: #888; }
-
-	.badge {
-		font-size: 0.65rem;
-		padding: 0.1rem 0.35rem;
-		border-radius: 3px;
-		background: #252525;
-		color: #888;
-	}
-
-	.priority-urgent { background: #5c1a1a; color: #ff6b6b; }
-	.priority-high { background: #5c3a1a; color: #ffaa6b; }
-	.priority-medium { background: #4a4a1a; color: #e0d06b; }
-	.priority-low { background: #1a3a1a; color: #6bcc6b; }
-	.energy { background: #1a2a4a; color: #6b9bff; }
 
 	.score-bar {
 		height: 4px;
