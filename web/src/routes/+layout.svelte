@@ -12,6 +12,7 @@
 
 <svelte:head>
 	<title>BentoTask</title>
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </svelte:head>
 
 <div class="app">
