@@ -27,6 +27,7 @@ type Stats struct {
 	TotalCompletions int     `json:"total_completions"`
 	CompletionRate   float64 `json:"completion_rate"`  // 0.0–1.0 over the rate period
 	RatePeriodDays   int     `json:"rate_period_days"` // number of days the rate covers
+	CompletedToday   bool    `json:"completed_today"`  // whether the habit was completed today
 }
 
 // CalculateStreak computes streak information from a sorted list of completions

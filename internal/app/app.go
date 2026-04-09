@@ -659,6 +659,17 @@ func (a *App) HabitStats(idOrPrefix string) (*model.Task, *habit.Stats, error) {
 	stats.CompletionRate = habit.CompletionRate(completions, freqType, target, 30)
 	stats.RatePeriodDays = 30
 
+	// Check if completed today
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	for _, c := range completions {
+		cDay := time.Date(c.CompletedAt.Year(), c.CompletedAt.Month(), c.CompletedAt.Day(), 0, 0, 0, 0, time.UTC)
+		if cDay.Equal(today) {
+			stats.CompletedToday = true
+			break
+		}
+	}
+
 	return task, &stats, nil
 }
 

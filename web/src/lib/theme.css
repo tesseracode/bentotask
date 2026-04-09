@@ -15,6 +15,7 @@
 	--text-secondary: #888;
 	--text-tertiary: #555;
 	--text-muted: #444;
+	--text-on-accent: #fff;
 
 	/* --- Accent --- */
 	--accent-primary: #9b7ede;
@@ -77,6 +78,7 @@
 	--text-secondary: #84828f;
 	--text-tertiary: #a09aa8;
 	--text-muted: #bbb5be;
+	--text-on-accent: #fff;
 
 	--accent-primary: #9d6381;
 	--accent-hover: #b3789a;

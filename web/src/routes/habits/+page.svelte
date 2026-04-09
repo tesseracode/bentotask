@@ -118,7 +118,7 @@
 
 	function isCompletedToday(stats: HabitStats | null): boolean {
 		if (!stats) return false;
-		return stats.current_streak > 0 && stats.total_completions > 0;
+		return stats.completed_today;
 	}
 
 	function formatRate(stats: HabitStats | null): string {
@@ -262,7 +262,7 @@
 	.add-bar input:focus { outline: none; border-color: var(--accent-primary); }
 
 	.add-bar button {
-		padding: 0.6rem 1rem; background: var(--accent-primary); color: #fff; border: none;
+		padding: 0.6rem 1rem; background: var(--accent-primary); color: var(--text-on-accent); border: none;
 		border-radius: var(--radius-button); cursor: pointer; font-size: 1rem;
 	}
 
@@ -296,12 +296,12 @@
 	}
 
 	.toggle-group button:last-child { border-right: none; }
-	.toggle-group button.active { background: var(--accent-primary); color: #fff; }
+	.toggle-group button.active { background: var(--accent-primary); color: var(--text-on-accent); }
 
 	.form-actions, .edit-actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
 
 	.save-btn {
-		padding: 0.4rem 0.8rem; background: var(--accent-primary); color: #fff; border: none;
+		padding: 0.4rem 0.8rem; background: var(--accent-primary); color: var(--text-on-accent); border: none;
 		border-radius: var(--radius-badge); cursor: pointer; font-size: 0.8rem;
 	}
 
@@ -336,8 +336,8 @@
 		font-size: 0.75rem; border-radius: 50%;
 	}
 
-	.done-icon { background: var(--success); color: #fff; }
-	.at-risk-icon { background: var(--warning); color: #fff; }
+	.done-icon { background: var(--success); color: var(--text-on-accent); }
+	.at-risk-icon { background: var(--warning); color: var(--text-on-accent); }
 	.neutral-icon { background: var(--bg-elevated); color: var(--text-tertiary); border: 1px solid var(--border-subtle); }
 
 	.habit-body { flex: 1; min-width: 0; }

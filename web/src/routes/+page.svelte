@@ -332,7 +332,7 @@
 	.add-bar button {
 		padding: 0.6rem 1.2rem;
 		background: var(--accent-primary);
-		color: #fff;
+		color: var(--text-on-accent);
 		border: none;
 		border-radius: var(--radius-button);
 		cursor: pointer;
@@ -535,7 +535,7 @@
 	.save-btn {
 		padding: 0.4rem 0.8rem;
 		background: var(--accent-primary);
-		color: #fff;
+		color: var(--text-on-accent);
 		border: none;
 		border-radius: var(--radius-badge);
 		cursor: pointer;

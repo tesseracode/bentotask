@@ -75,6 +75,7 @@ export interface HabitStats {
 	total_completions: number;
 	completion_rate: number;
 	rate_period_days: number;
+	completed_today: boolean;
 }
 
 export interface Collection<T> {

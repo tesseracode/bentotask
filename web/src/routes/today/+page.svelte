@@ -243,7 +243,7 @@
 		font-size: 0.85rem;
 	}
 
-	.tabs button.active { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+	.tabs button.active { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--text-on-accent); }
 
 	.controls { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: flex-end; }
 
@@ -275,7 +275,7 @@
 	}
 
 	.toggle-group button:last-child { border-right: none; }
-	.toggle-group button.active { background: var(--accent-primary); color: #fff; }
+	.toggle-group button.active { background: var(--accent-primary); color: var(--text-on-accent); }
 
 	.refresh-btn {
 		padding: 0.35rem 0.7rem; background: var(--bg-elevated); border: 1px solid var(--border-default);
