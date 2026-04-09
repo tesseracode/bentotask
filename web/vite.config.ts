@@ -1,0 +1,15 @@
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	plugins: [sveltekit()],
+	server: {
+		proxy: {
+			// Proxy API requests to the Go backend during development
+			'/api': {
+				target: 'http://127.0.0.1:7878',
+				changeOrigin: true
+			}
+		}
+	}
+});
