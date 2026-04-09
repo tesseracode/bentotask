@@ -159,7 +159,7 @@
 </script>
 
 <div class="view">
-	<h1>📥 Inbox</h1>
+	<h1>Inbox</h1>
 
 	<div class="add-bar">
 		<input
@@ -309,7 +309,7 @@
 
 <style>
 	.view { max-width: 700px; }
-	h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
+	h1 { margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--text-primary); }
 
 	.add-bar {
 		display: flex;
@@ -320,28 +320,27 @@
 	.add-bar input {
 		flex: 1;
 		padding: 0.6rem 0.8rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #e0e0e0;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-input);
+		color: var(--text-primary);
 		font-size: 0.9rem;
 	}
 
-	.add-bar input:focus { outline: none; border-color: #555; }
+	.add-bar input:focus { outline: none; border-color: var(--accent-primary); }
 
 	.add-bar button {
 		padding: 0.6rem 1.2rem;
-		background: #2563eb;
-		color: white;
+		background: var(--accent-primary);
+		color: #fff;
 		border: none;
-		border-radius: 6px;
+		border-radius: var(--radius-button);
 		cursor: pointer;
 		font-size: 0.9rem;
 	}
 
 	.add-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-	/* Filter bar */
 	.filter-bar {
 		display: flex;
 		gap: 0.5rem;
@@ -352,52 +351,55 @@
 	.filter-bar select,
 	.filter-bar .tag-filter {
 		padding: 0.4rem 0.6rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #ccc;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
+		color: var(--text-secondary);
 		font-size: 0.8rem;
 	}
 
 	.filter-bar .tag-filter { width: 120px; }
-	.filter-bar select:focus, .filter-bar .tag-filter:focus { outline: none; border-color: #555; }
+	.filter-bar select:focus, .filter-bar .tag-filter:focus { outline: none; border-color: var(--accent-primary); }
 
 	.sort-btn {
 		padding: 0.4rem 0.6rem;
-		background: #252525;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #999;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
+		color: var(--text-secondary);
 		cursor: pointer;
 		font-size: 0.8rem;
 		margin-left: auto;
 	}
 
-	.sort-btn:hover { color: #fff; border-color: #555; }
+	.sort-btn:hover { color: var(--text-primary); border-color: var(--accent-primary); }
 
 	.error {
 		padding: 0.6rem;
-		background: #3b1111;
-		border: 1px solid #5c2020;
-		border-radius: 6px;
-		color: #ff6b6b;
+		background: var(--warning-subtle);
+		border: 1px solid var(--warning);
+		border-radius: var(--radius-badge);
+		color: var(--warning-text);
 		margin-bottom: 1rem;
 		font-size: 0.85rem;
 	}
 
-	.empty { color: #666; text-align: center; padding: 3rem; }
+	.empty { color: var(--text-tertiary); text-align: center; padding: 3rem; }
 
-	.task-list { list-style: none; }
+	.task-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
 
 	.task-item {
 		display: flex;
 		align-items: flex-start;
 		gap: 0.75rem;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid #1f1f1f;
+		padding: 0.8rem 1rem;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
 	}
 
-	.task-item.expanded { background: #141414; margin: 0 -0.5rem; padding: 0.75rem 0.5rem; border-radius: 6px; }
+	.task-item.expanded { border-color: var(--accent-primary); }
 
 	.check-btn {
 		background: none;
@@ -412,12 +414,12 @@
 		display: block;
 		width: 18px;
 		height: 18px;
-		border: 2px solid #555;
+		border: 2px solid var(--accent-primary);
 		border-radius: 50%;
-		transition: border-color 0.15s;
+		transition: border-color 0.15s, background 0.15s;
 	}
 
-	.check-btn:hover .check-circle { border-color: #4ade80; }
+	.check-btn:hover .check-circle { border-color: var(--success); background: var(--success-subtle); }
 
 	.task-body { flex: 1; min-width: 0; }
 
@@ -425,15 +427,16 @@
 		display: block;
 		background: none;
 		border: none;
-		color: #e0e0e0;
-		font-size: 0.95rem;
+		color: var(--text-primary);
+		font-size: 0.93rem;
+		font-weight: 500;
 		cursor: pointer;
 		text-align: left;
 		padding: 0;
 		width: 100%;
 	}
 
-	.task-title-btn:hover { color: #fff; }
+	.task-title-btn:hover { color: var(--accent-hover); }
 
 	.task-meta {
 		display: flex;
@@ -445,7 +448,7 @@
 	.delete-btn {
 		background: none;
 		border: none;
-		color: #555;
+		color: var(--text-tertiary);
 		font-size: 1.2rem;
 		cursor: pointer;
 		padding: 0 0.3rem;
@@ -453,13 +456,12 @@
 		flex-shrink: 0;
 	}
 
-	.delete-btn:hover { color: #ff6b6b; }
+	.delete-btn:hover { color: var(--warning-text); }
 
-	/* Detail panel */
 	.detail-panel {
 		margin-top: 0.75rem;
 		padding-top: 0.75rem;
-		border-top: 1px solid #252525;
+		border-top: 1px solid var(--border-default);
 	}
 
 	.detail-grid {
@@ -470,17 +472,17 @@
 		margin-bottom: 0.75rem;
 	}
 
-	.detail-label { color: #666; }
-	.detail-value { color: #bbb; }
+	.detail-label { color: var(--text-tertiary); }
+	.detail-value { color: var(--text-secondary); }
 	.mono { font-family: monospace; font-size: 0.75rem; }
 
 	.detail-body {
-		background: #1a1a1a;
-		border: 1px solid #252525;
-		border-radius: 4px;
+		background: var(--bg-base);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
 		padding: 0.6rem;
 		font-size: 0.8rem;
-		color: #bbb;
+		color: var(--text-secondary);
 		white-space: pre-wrap;
 		margin-bottom: 0.75rem;
 		font-family: inherit;
@@ -488,17 +490,16 @@
 
 	.edit-btn {
 		padding: 0.35rem 0.7rem;
-		background: #252525;
-		border: 1px solid #333;
-		border-radius: 4px;
-		color: #ccc;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
+		color: var(--text-secondary);
 		cursor: pointer;
 		font-size: 0.8rem;
 	}
 
-	.edit-btn:hover { border-color: #2563eb; color: #fff; }
+	.edit-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
 
-	/* Edit form */
 	.edit-form {
 		display: flex;
 		flex-direction: column;
@@ -510,51 +511,43 @@
 		flex-direction: column;
 		gap: 0.2rem;
 		font-size: 0.75rem;
-		color: #888;
+		color: var(--text-secondary);
 	}
 
-	.hint { color: #555; }
+	.hint { color: var(--text-tertiary); }
 
 	.edit-form input, .edit-form select {
 		padding: 0.4rem 0.6rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 4px;
-		color: #e0e0e0;
+		background: var(--bg-base);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
+		color: var(--text-primary);
 		font-size: 0.85rem;
 	}
 
-	.edit-form input:focus, .edit-form select:focus { outline: none; border-color: #555; }
+	.edit-form input:focus, .edit-form select:focus { outline: none; border-color: var(--accent-primary); }
 
-	.edit-row {
-		display: flex;
-		gap: 0.5rem;
-	}
-
+	.edit-row { display: flex; gap: 0.5rem; }
 	.edit-row label { flex: 1; }
 
-	.edit-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.25rem;
-	}
+	.edit-actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
 
 	.save-btn {
 		padding: 0.4rem 0.8rem;
-		background: #2563eb;
-		color: white;
+		background: var(--accent-primary);
+		color: #fff;
 		border: none;
-		border-radius: 4px;
+		border-radius: var(--radius-badge);
 		cursor: pointer;
 		font-size: 0.8rem;
 	}
 
 	.cancel-btn {
 		padding: 0.4rem 0.8rem;
-		background: #252525;
-		color: #ccc;
-		border: 1px solid #333;
-		border-radius: 4px;
+		background: var(--bg-elevated);
+		color: var(--text-secondary);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge);
 		cursor: pointer;
 		font-size: 0.8rem;
 	}

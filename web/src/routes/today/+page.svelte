@@ -8,7 +8,6 @@
 	let error = $state('');
 	let viewMode: 'suggest' | 'plan' = $state('suggest');
 
-	// Controls
 	let availTime = $state(60);
 	let planTime = $state(480);
 	let energy: 'low' | 'medium' | 'high' = $state('medium');
@@ -16,28 +15,20 @@
 	let count = $state(5);
 	let contexts: string[] = $state([]);
 
-	// Score expansion
 	let expandedIdx: number | null = $state(null);
 
 	async function loadContexts() {
 		try {
 			const res = await meta.contexts();
 			contexts = res.items;
-		} catch {
-			// non-critical
-		}
+		} catch { /* non-critical */ }
 	}
 
 	async function loadSuggestions() {
 		loading = true;
 		error = '';
 		try {
-			const res = await scheduling.suggest({
-				time: availTime,
-				energy,
-				context: context || undefined,
-				count
-			});
+			const res = await scheduling.suggest({ time: availTime, energy, context: context || undefined, count });
 			suggestions = res.items;
 			expandedIdx = null;
 		} catch (e) {
@@ -51,11 +42,7 @@
 		loading = true;
 		error = '';
 		try {
-			plan = await scheduling.planToday({
-				time: planTime,
-				energy,
-				context: context || undefined
-			});
+			plan = await scheduling.planToday({ time: planTime, energy, context: context || undefined });
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load plan';
 		} finally {
@@ -73,9 +60,7 @@
 		else loadPlan();
 	}
 
-	function formatScore(n: number): string {
-		return n.toFixed(2);
-	}
+	function formatScore(n: number): string { return n.toFixed(2); }
 
 	function formatDuration(min: number): string {
 		if (min < 60) return `${min}m`;
@@ -107,30 +92,19 @@
 	}
 
 	const scoreLabels: Record<string, string> = {
-		urgency: 'Urgency',
-		priority: 'Priority',
-		energy_match: 'Energy Match',
-		streak_risk: 'Streak Risk',
-		age_boost: 'Age Boost',
-		dependency_unlock: 'Dep. Unlock'
+		urgency: 'Urgency', priority: 'Priority', energy_match: 'Energy Match',
+		streak_risk: 'Streak Risk', age_boost: 'Age Boost', dependency_unlock: 'Dep. Unlock'
 	};
 
-	onMount(() => {
-		loadContexts();
-		loadSuggestions();
-	});
+	onMount(() => { loadContexts(); loadSuggestions(); });
 </script>
 
 <div class="view">
-	<h1>📅 Today</h1>
+	<h1>Today</h1>
 
 	<div class="tabs">
-		<button class:active={viewMode === 'suggest'} onclick={() => switchView('suggest')}>
-			What Now?
-		</button>
-		<button class:active={viewMode === 'plan'} onclick={() => switchView('plan')}>
-			Day Plan
-		</button>
+		<button class:active={viewMode === 'suggest'} onclick={() => switchView('suggest')}>What Now?</button>
+		<button class:active={viewMode === 'plan'} onclick={() => switchView('plan')}>Day Plan</button>
 	</div>
 
 	<div class="controls">
@@ -148,10 +122,7 @@
 			<span class="ctrl-label">Energy</span>
 			<div class="toggle-group">
 				{#each (['low', 'medium', 'high'] as const) as lvl}
-					<button
-						class:active={energy === lvl}
-						onclick={() => { energy = lvl; reload(); }}
-					>{lvl}</button>
+					<button class:active={energy === lvl} onclick={() => { energy = lvl; reload(); }}>{lvl}</button>
 				{/each}
 			</div>
 		</div>
@@ -191,9 +162,7 @@
 					<li class="suggestion-item">
 						<span class="rank">{i + 1}</span>
 						<div class="suggestion-body">
-							<button class="suggestion-title" onclick={() => toggleScoreExpand(i)}>
-								{s.title}
-							</button>
+							<button class="suggestion-title" onclick={() => toggleScoreExpand(i)}>{s.title}</button>
 							<div class="suggestion-meta">
 								<span class="duration">~{s.duration}m</span>
 								{#if s.priority && s.priority !== 'none'}
@@ -207,9 +176,7 @@
 								{/if}
 							</div>
 							<div class="score-row">
-								<div class="score-bar">
-									<div class="score-fill" style="width: {scorePercent(s.score.total)}%"></div>
-								</div>
+								<div class="score-bar"><div class="score-fill" style="width: {scorePercent(s.score.total)}%"></div></div>
 								<span class="score-label">{formatScore(s.score.total)}</span>
 							</div>
 
@@ -220,9 +187,7 @@
 										{#if val > 0}
 											<div class="score-factor">
 												<span class="factor-label">{label}</span>
-												<div class="factor-bar">
-													<div class="factor-fill" style="width: {Math.round(val * 100)}%"></div>
-												</div>
+												<div class="factor-bar"><div class="factor-fill" style="width: {Math.round(val * 100)}%"></div></div>
 												<span class="factor-value">{val.toFixed(2)}</span>
 											</div>
 										{/if}
@@ -250,9 +215,7 @@
 						<div class="plan-body">
 							<span class="plan-title">{s.title}</span>
 							<div class="plan-score">
-								<div class="score-bar">
-									<div class="score-fill" style="width: {scorePercent(s.score.total)}%"></div>
-								</div>
+								<div class="score-bar"><div class="score-fill" style="width: {scorePercent(s.score.total)}%"></div></div>
 								<span class="score-label">{formatScore(s.score.total)}</span>
 							</div>
 							<span class="plan-duration">{s.duration}m</span>
@@ -266,271 +229,129 @@
 
 <style>
 	.view { max-width: 700px; }
-	h1 { margin-bottom: 1rem; font-size: 1.5rem; }
+	h1 { margin-bottom: 1rem; font-size: 1.5rem; color: var(--text-primary); }
 
-	.tabs {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-	}
+	.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 
 	.tabs button {
 		padding: 0.5rem 1rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #999;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-button);
+		color: var(--text-secondary);
 		cursor: pointer;
 		font-size: 0.85rem;
 	}
 
-	.tabs button.active {
-		background: #2563eb;
-		border-color: #2563eb;
-		color: white;
-	}
+	.tabs button.active { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
 
-	/* Controls */
-	.controls {
-		display: flex;
-		gap: 0.75rem;
-		margin-bottom: 1.5rem;
-		flex-wrap: wrap;
-		align-items: flex-end;
-	}
+	.controls { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: flex-end; }
 
-	.controls label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-		font-size: 0.75rem;
-	}
-
-	.ctrl-label { color: #666; font-size: 0.7rem; }
-	.ctrl-unit { color: #555; font-size: 0.7rem; }
+	.controls label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.75rem; }
+	.ctrl-label { color: var(--text-tertiary); font-size: 0.7rem; }
+	.ctrl-unit { color: var(--text-tertiary); font-size: 0.7rem; }
 
 	.controls input[type="number"] {
-		width: 65px;
-		padding: 0.35rem 0.5rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 4px;
-		color: #e0e0e0;
-		font-size: 0.8rem;
+		width: 65px; padding: 0.35rem 0.5rem;
+		background: var(--bg-surface); border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge); color: var(--text-primary); font-size: 0.8rem;
 	}
 
 	.controls select {
-		padding: 0.35rem 0.5rem;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		border-radius: 4px;
-		color: #ccc;
-		font-size: 0.8rem;
+		padding: 0.35rem 0.5rem; background: var(--bg-surface); border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge); color: var(--text-secondary); font-size: 0.8rem;
 	}
 
-	.controls input:focus, .controls select:focus { outline: none; border-color: #555; }
+	.controls input:focus, .controls select:focus { outline: none; border-color: var(--accent-primary); }
 
-	.energy-toggle {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
+	.energy-toggle { display: flex; flex-direction: column; gap: 0.2rem; }
 
-	.toggle-group {
-		display: flex;
-		border: 1px solid #333;
-		border-radius: 4px;
-		overflow: hidden;
-	}
+	.toggle-group { display: flex; border: 1px solid var(--border-default); border-radius: var(--radius-badge); overflow: hidden; }
 
 	.toggle-group button {
-		padding: 0.35rem 0.5rem;
-		background: #1a1a1a;
-		border: none;
-		border-right: 1px solid #333;
-		color: #999;
-		cursor: pointer;
-		font-size: 0.75rem;
-		text-transform: capitalize;
+		padding: 0.35rem 0.5rem; background: var(--bg-surface); border: none;
+		border-right: 1px solid var(--border-default); color: var(--text-secondary);
+		cursor: pointer; font-size: 0.75rem; text-transform: capitalize;
 	}
 
 	.toggle-group button:last-child { border-right: none; }
-	.toggle-group button.active { background: #2563eb; color: white; }
+	.toggle-group button.active { background: var(--accent-primary); color: #fff; }
 
 	.refresh-btn {
-		padding: 0.35rem 0.7rem;
-		background: #252525;
-		border: 1px solid #333;
-		border-radius: 4px;
-		color: #ccc;
-		cursor: pointer;
-		font-size: 0.8rem;
-		align-self: flex-end;
+		padding: 0.35rem 0.7rem; background: var(--bg-elevated); border: 1px solid var(--border-default);
+		border-radius: var(--radius-badge); color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; align-self: flex-end;
 	}
 
-	.refresh-btn:hover { border-color: #2563eb; color: #fff; }
+	.refresh-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
 
 	.error {
-		padding: 0.6rem;
-		background: #3b1111;
-		border: 1px solid #5c2020;
-		border-radius: 6px;
-		color: #ff6b6b;
-		margin-bottom: 1rem;
-		font-size: 0.85rem;
+		padding: 0.6rem; background: var(--warning-subtle); border: 1px solid var(--warning);
+		border-radius: var(--radius-badge); color: var(--warning-text); margin-bottom: 1rem; font-size: 0.85rem;
 	}
 
-	.empty { color: #666; text-align: center; padding: 3rem; }
+	.empty { color: var(--text-tertiary); text-align: center; padding: 3rem; }
 
-	/* Suggestions */
-	.suggestion-list { list-style: none; }
+	.suggestion-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
 
 	.suggestion-item {
-		display: flex;
-		gap: 0.75rem;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid #1f1f1f;
-		align-items: flex-start;
+		display: flex; gap: 0.75rem; padding: 1rem; align-items: flex-start;
+		background: var(--bg-surface); border: 1px solid var(--border-default);
+		border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 	}
 
-	.rank {
-		font-size: 0.8rem;
-		color: #555;
-		font-weight: 600;
-		min-width: 1.5rem;
-		text-align: right;
-		margin-top: 0.15rem;
-	}
+	.rank { font-size: 0.9rem; color: var(--accent-primary); font-weight: 700; min-width: 1.5rem; text-align: right; margin-top: 0.15rem; }
 
 	.suggestion-body { flex: 1; }
 
 	.suggestion-title {
-		font-size: 0.95rem;
-		margin-bottom: 0.25rem;
-		background: none;
-		border: none;
-		color: #e0e0e0;
-		cursor: pointer;
-		padding: 0;
-		text-align: left;
-		width: 100%;
+		font-size: 0.95rem; font-weight: 500; margin-bottom: 0.25rem; background: none; border: none;
+		color: var(--text-primary); cursor: pointer; padding: 0; text-align: left; width: 100%;
 	}
 
-	.suggestion-title:hover { color: #fff; }
+	.suggestion-title:hover { color: var(--accent-hover); }
 
-	.suggestion-meta {
-		display: flex;
-		gap: 0.35rem;
-		align-items: center;
-		margin-bottom: 0.35rem;
-	}
+	.suggestion-meta { display: flex; gap: 0.35rem; align-items: center; margin-bottom: 0.35rem; }
 
-	.duration { font-size: 0.75rem; color: #888; }
+	.duration { font-size: 0.75rem; color: var(--text-secondary); }
 
-	.score-row {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-	}
+	.score-row { display: flex; align-items: center; gap: 0.4rem; }
 
-	.score-bar {
-		height: 4px;
-		background: #252525;
-		border-radius: 2px;
-		width: 100px;
-	}
+	.score-bar { height: 6px; background: var(--score-track); border-radius: 3px; width: 100px; }
 
-	.score-fill {
-		height: 100%;
-		background: #2563eb;
-		border-radius: 2px;
-		transition: width 0.3s;
-	}
+	.score-fill { height: 100%; background: var(--score-fill); border-radius: 3px; transition: width 0.3s; }
 
-	.score-label {
-		font-size: 0.7rem;
-		color: #666;
-	}
+	.score-label { font-size: 0.7rem; color: var(--accent-hover); font-weight: 600; }
 
-	/* Score breakdown */
-	.score-breakdown {
-		margin-top: 0.5rem;
-		padding: 0.5rem 0;
-		border-top: 1px solid #252525;
-	}
+	.score-breakdown { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-default); }
 
-	.score-factor {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.3rem;
-	}
+	.score-factor { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
 
-	.factor-label {
-		font-size: 0.7rem;
-		color: #888;
-		width: 80px;
-	}
+	.factor-label { font-size: 0.68rem; color: var(--text-secondary); width: 80px; }
 
-	.factor-bar {
-		flex: 1;
-		height: 3px;
-		background: #252525;
-		border-radius: 2px;
-		max-width: 80px;
-	}
+	.factor-bar { flex: 1; height: 4px; background: var(--score-track); border-radius: 2px; max-width: 80px; }
 
-	.factor-fill {
-		height: 100%;
-		background: #4ade80;
-		border-radius: 2px;
-	}
+	.factor-fill { height: 100%; background: var(--score-fill-alt); border-radius: 2px; }
 
-	.factor-value {
-		font-size: 0.65rem;
-		color: #666;
-		width: 30px;
-		text-align: right;
-		font-family: monospace;
-	}
+	.factor-value { font-size: 0.65rem; color: var(--score-fill-alt); width: 30px; text-align: right; font-family: monospace; font-weight: 500; }
 
-	/* Plan */
-	.plan-header {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 1rem;
-		font-size: 0.85rem;
-		color: #888;
-	}
+	.plan-header { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
 
-	.plan-util { color: #2563eb; }
-	.plan-free { color: #4ade80; }
+	.plan-util { color: var(--accent-primary); }
+	.plan-free { color: var(--success); }
 
-	.plan-list { list-style: none; }
+	.plan-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
 
 	.plan-item {
-		display: flex;
-		gap: 1rem;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid #1f1f1f;
-		align-items: center;
+		display: flex; gap: 1rem; padding: 0.6rem 1rem; align-items: center;
+		background: var(--bg-surface); border: 1px solid var(--border-default);
+		border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 	}
 
-	.plan-time {
-		font-size: 0.8rem;
-		color: #666;
-		font-family: monospace;
-		min-width: 90px;
-	}
+	.plan-time { font-size: 0.8rem; color: var(--text-tertiary); font-family: monospace; min-width: 90px; }
 
-	.plan-body {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
+	.plan-body { flex: 1; display: flex; align-items: center; gap: 0.75rem; }
 
-	.plan-title { font-size: 0.9rem; flex: 1; }
+	.plan-title { font-size: 0.9rem; flex: 1; color: var(--text-primary); }
 	.plan-score { display: flex; align-items: center; gap: 0.3rem; }
-	.plan-duration { font-size: 0.75rem; color: #666; min-width: 30px; text-align: right; }
+	.plan-duration { font-size: 0.75rem; color: var(--text-tertiary); min-width: 30px; text-align: right; }
 </style>

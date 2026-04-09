@@ -1,22 +1,24 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
+	import '$lib/theme.css';
 	import '$lib/badges.css';
 
 	let { children }: { children: Snippet } = $props();
 
-	const navItems = [
+	const showDesignRoute = true; // set to false to hide /design from nav
+
+	const navItems: { href: string; label: string; icon: string }[] = [
 		{ href: '/', label: 'Inbox', icon: '📥' },
 		{ href: '/today', label: 'Today', icon: '📅' },
 		{ href: '/habits', label: 'Habits', icon: '🔥' },
-		{ href: '/design', label: 'Design', icon: '🎨' },
+		...(showDesignRoute ? [{ href: '/design', label: 'Design', icon: '🎨' }] : []),
 	];
 
 	function isActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
 		return page.url.pathname.startsWith(href);
 	}
-
 </script>
 
 <svelte:head>
@@ -54,9 +56,9 @@
 	}
 
 	:global(body) {
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		background: #0f0f0f;
-		color: #e0e0e0;
+		font-family: var(--font-body);
+		background: var(--bg-base);
+		color: var(--text-primary);
 		line-height: 1.5;
 	}
 
@@ -67,8 +69,8 @@
 
 	.sidebar {
 		width: 220px;
-		background: #1a1a1a;
-		border-right: 1px solid #2a2a2a;
+		background: var(--bg-surface);
+		border-right: 1px solid var(--border-default);
 		padding: 1rem 0;
 		display: flex;
 		flex-direction: column;
@@ -82,6 +84,7 @@
 		padding: 0.5rem 1.25rem 1.5rem;
 		font-size: 1.1rem;
 		font-weight: 600;
+		color: var(--text-primary);
 	}
 
 	.logo-icon {
@@ -97,21 +100,21 @@
 		align-items: center;
 		gap: 0.6rem;
 		padding: 0.6rem 1.25rem;
-		color: #999;
+		color: var(--text-secondary);
 		text-decoration: none;
 		font-size: 0.9rem;
 		transition: background 0.15s, color 0.15s;
 	}
 
 	.nav-link:hover {
-		background: #252525;
-		color: #fff;
+		background: var(--bg-elevated);
+		color: var(--text-primary);
 	}
 
 	.nav-link.active {
-		background: #1e293b;
-		color: #fff;
-		border-right: 2px solid #2563eb;
+		background: var(--bg-elevated);
+		color: var(--text-primary);
+		border-right: 2px solid var(--accent-primary);
 	}
 
 	.nav-icon {

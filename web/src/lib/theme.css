@@ -1,0 +1,119 @@
+/* ======================================================
+   BentoTask Theme — CSS Custom Properties
+   Active: Bento Alt (Dark)
+   Archived: Clay Alt (Light) — commented out for future use
+   ====================================================== */
+
+:root {
+	/* --- Base surfaces --- */
+	--bg-base: #0f0f12;
+	--bg-surface: #1a1a22;
+	--bg-elevated: #22222e;
+
+	/* --- Text --- */
+	--text-primary: #e5e5e7;
+	--text-secondary: #888;
+	--text-tertiary: #555;
+	--text-muted: #444;
+
+	/* --- Accent --- */
+	--accent-primary: #9b7ede;
+	--accent-hover: #b9a4e8;
+	--accent-subtle: rgba(155, 126, 222, 0.12);
+
+	/* --- Success (sea green) --- */
+	--success: #09814a;
+	--success-subtle: rgba(9, 129, 74, 0.1);
+	--success-border: rgba(9, 129, 74, 0.25);
+	--success-hover: rgba(9, 129, 74, 0.18);
+
+	/* --- Warning (cherry rose) --- */
+	--warning: #b6174b;
+	--warning-text: #e04878;
+	--warning-subtle: rgba(182, 23, 75, 0.1);
+
+	/* --- Borders & shadows --- */
+	--border-default: #2e2d4d;
+	--border-subtle: #3a3a4c;
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+	--shadow-elevated: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+	/* --- Radius --- */
+	--radius-card: 10px;
+	--radius-badge: 5px;
+	--radius-button: 8px;
+	--radius-input: 10px;
+
+	/* --- Score bars --- */
+	--score-track: #22222e;
+	--score-fill: #9b7ede;
+	--score-fill-alt: #09814a;
+
+	/* --- Priority badge colors --- */
+	--priority-urgent-bg: rgba(182, 23, 75, 0.12);
+	--priority-urgent-text: #e04878;
+	--priority-high-bg: rgba(155, 126, 222, 0.12);
+	--priority-high-text: #9b7ede;
+	--priority-medium-bg: rgba(155, 126, 222, 0.08);
+	--priority-medium-text: #8a7ab8;
+	--priority-low-bg: rgba(9, 129, 74, 0.1);
+	--priority-low-text: #09814a;
+
+	/* --- Fonts --- */
+	--font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ======================================================
+   ARCHIVED: Clay Alt (Light Mode)
+   To activate: uncomment this block and comment out :root above
+   Or use [data-theme="light"] for a toggle
+
+[data-theme="light"] {
+	--bg-base: #fdecef;
+	--bg-surface: #fff5f6;
+	--bg-elevated: #f0e0e3;
+
+	--text-primary: #0f110c;
+	--text-secondary: #84828f;
+	--text-tertiary: #a09aa8;
+	--text-muted: #bbb5be;
+
+	--accent-primary: #9d6381;
+	--accent-hover: #b3789a;
+	--accent-subtle: rgba(157, 99, 129, 0.12);
+
+	--success: #612940;
+	--success-subtle: rgba(97, 41, 64, 0.08);
+	--success-border: rgba(97, 41, 64, 0.2);
+	--success-hover: rgba(97, 41, 64, 0.12);
+
+	--warning: #b6174b;
+	--warning-text: #b6174b;
+	--warning-subtle: rgba(182, 23, 75, 0.08);
+
+	--border-default: rgba(157, 99, 129, 0.2);
+	--border-subtle: rgba(157, 99, 129, 0.12);
+	--shadow-card: 0 1px 3px rgba(97, 41, 64, 0.06);
+	--shadow-elevated: 0 2px 6px rgba(97, 41, 64, 0.1);
+
+	--radius-card: 14px;
+	--radius-badge: 8px;
+	--radius-button: 10px;
+	--radius-input: 12px;
+
+	--score-track: #f0e0e3;
+	--score-fill: #9d6381;
+	--score-fill-alt: #612940;
+
+	--priority-urgent-bg: rgba(182, 23, 75, 0.1);
+	--priority-urgent-text: #b6174b;
+	--priority-high-bg: rgba(157, 99, 129, 0.12);
+	--priority-high-text: #9d6381;
+	--priority-medium-bg: rgba(157, 99, 129, 0.08);
+	--priority-medium-text: #84828f;
+	--priority-low-bg: rgba(97, 41, 64, 0.08);
+	--priority-low-text: #612940;
+
+	--font-body: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+   ====================================================== */

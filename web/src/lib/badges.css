@@ -1,24 +1,25 @@
-/* Shared badge styles used across views */
+/* Shared badge styles used across views — themed via CSS custom properties */
 .badge {
-	font-size: 0.7rem;
+	font-size: 0.65rem;
+	font-weight: 500;
 	padding: 0.15rem 0.45rem;
-	border-radius: 4px;
-	background: #252525;
-	color: #888;
+	border-radius: var(--radius-badge, 5px);
+	background: var(--bg-elevated);
+	color: var(--text-secondary);
 }
 
 .badge.priority-urgent,
-.priority-urgent { background: #5c1a1a; color: #ff6b6b; }
+.priority-urgent { background: var(--priority-urgent-bg); color: var(--priority-urgent-text); }
 .badge.priority-high,
-.priority-high { background: #5c3a1a; color: #ffaa6b; }
+.priority-high { background: var(--priority-high-bg); color: var(--priority-high-text); }
 .badge.priority-medium,
-.priority-medium { background: #4a4a1a; color: #e0d06b; }
+.priority-medium { background: var(--priority-medium-bg); color: var(--priority-medium-text); }
 .badge.priority-low,
-.priority-low { background: #1a3a1a; color: #6bcc6b; }
+.priority-low { background: var(--priority-low-bg); color: var(--priority-low-text); }
 
 .badge.energy,
-.energy { background: #1a2a4a; color: #6b9bff; }
+.energy { background: var(--accent-subtle); color: var(--accent-primary); }
 .badge.due,
-.due { background: #3a2a1a; color: #ddb06b; }
+.due { background: var(--warning-subtle); color: var(--warning-text); }
 .badge.tag,
-.tag { background: #2a1a3a; color: #b06bdd; }
+.tag { background: var(--bg-elevated); color: var(--text-secondary); }
