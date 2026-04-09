@@ -1,7 +1,7 @@
 <script lang="ts">
 	type Priority = 'urgent' | 'high' | 'medium' | 'low';
 	type Energy = 'high' | 'medium' | 'low';
-	type ThemeName = 'ink' | 'neon' | 'clay' | 'blueprint' | 'bento';
+	type ThemeName = 'bento' | 'bento-alt' | 'clay' | 'clay-alt';
 	type ViewName = 'inbox' | 'today' | 'habits';
 
 	interface MockTask {
@@ -65,11 +65,10 @@
 	];
 
 	const themes: { name: ThemeName; label: string }[] = [
-		{ name: 'ink', label: 'Ink' },
-		{ name: 'neon', label: 'Neon' },
-		{ name: 'clay', label: 'Clay' },
-		{ name: 'blueprint', label: 'Blueprint' },
 		{ name: 'bento', label: 'Bento' },
+		{ name: 'bento-alt', label: 'Bento Alt' },
+		{ name: 'clay', label: 'Clay' },
+		{ name: 'clay-alt', label: 'Clay Alt' },
 	];
 
 	const views: { name: ViewName; label: string; icon: string }[] = [
@@ -99,7 +98,6 @@
 		expandedScoreIdx = expandedScoreIdx === idx ? null : idx;
 	}
 </script>
-
 <svelte:head>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -279,7 +277,6 @@
 		{/if}
 	</div>
 </div>
-
 <style>
 	/* ======================================================
 	   CONTROL BAR — neutral, always the same regardless of theme
@@ -343,10 +340,10 @@
 		color: #fff;
 	}
 
-	.theme-btn[data-theme="ink"].active { background: #c0392b; border-color: #c0392b; }
-	.theme-btn[data-theme="neon"].active { background: #00fff2; border-color: #00fff2; color: #000; }
+	.theme-btn[data-theme="bento"].active { background: #6366f1; border-color: #6366f1; }
+	.theme-btn[data-theme="bento-alt"].active { background: #9b7ede; border-color: #9b7ede; }
 	.theme-btn[data-theme="clay"].active { background: #c45b3a; border-color: #c45b3a; }
-	.theme-btn[data-theme="blueprint"].active { background: #4a90d9; border-color: #4a90d9; }
+	.theme-btn[data-theme="clay-alt"].active { background: #9d6381; border-color: #9d6381; }
 
 	.view-btn.active {
 		background: #252530;
@@ -702,520 +699,514 @@
 	}
 
 	/* ======================================================
-	   THEME: INK — Editorial Minimalism
-	   Feels like: a beautifully typeset Moleskine to-do list
+	   THEME: BENTO — The One We Ship
+	   Feels like: Arc browser meets Things 3
 	   ====================================================== */
-	.theme-ink {
-		background: #fafaf8;
-		color: #1a1a1a;
-		font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+	.theme-bento {
+		background: #111113;
+		color: #e5e5e7;
+		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
 	}
 
-	.theme-ink .themed-content { max-width: 620px; }
+	.theme-bento .view-title {
+		font-weight: 600;
+		font-size: 1.5rem;
+		color: #e5e5e7;
+		letter-spacing: -0.01em;
+	}
 
-	.theme-ink .view-title {
-		font-family: 'Playfair Display', Georgia, serif;
+	.theme-bento .view-count,
+	.theme-bento .view-subtitle {
+		color: #6366f1;
+		font-weight: 500;
+		font-size: 0.8rem;
+	}
+
+	.theme-bento .view-header {
+		margin-bottom: 1.25rem;
+	}
+
+	.theme-bento .add-input-bar {
+		background: #1c1c1e;
+		border: 1px solid #2a2a2c;
+		border-radius: 10px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	}
+
+	.theme-bento .add-icon { color: #6366f1; }
+	.theme-bento .add-placeholder { color: #555; }
+
+	.theme-bento .task-item {
+		background: #1c1c1e;
+		border: 1px solid #2a2a2c;
+		border-radius: 10px;
+		padding: 0.8rem 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	.theme-bento .checkbox-inner {
+		border: 2px solid #6366f1;
+		border-radius: 50%;
+		width: 18px;
+		height: 18px;
+	}
+
+	.theme-bento .task-title {
+		color: #e5e5e7;
+		font-weight: 500;
+		font-size: 0.93rem;
+	}
+
+	.theme-bento .badge {
+		background: #252528;
+		color: #999;
+		border-radius: 5px;
+		font-size: 0.6rem;
+		font-weight: 500;
+		padding: 0.15rem 0.45rem;
+	}
+
+	.theme-bento .badge-priority {
+		background: rgba(99, 102, 241, 0.12);
+		color: #818cf8;
+	}
+
+	.theme-bento .badge-urgent {
+		background: rgba(239, 68, 68, 0.12);
+		color: #f87171;
+	}
+
+	.theme-bento .badge-high {
+		background: rgba(245, 158, 11, 0.12);
+		color: #fbbf24;
+	}
+
+	.theme-bento .badge-energy {
+		background: rgba(134, 203, 146, 0.1);
+		color: #86cb92;
+	}
+
+	.theme-bento .badge-due {
+		background: rgba(245, 158, 11, 0.1);
+		color: #f59e0b;
+	}
+
+	.theme-bento .badge-tag {
+		color: #777;
+	}
+
+	/* Bento: suggestions */
+	.theme-bento .suggestion-item {
+		background: #1c1c1e;
+		border: 1px solid #2a2a2c;
+		border-radius: 10px;
+		padding: 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	.theme-bento .suggestion-rank {
+		color: #6366f1;
 		font-weight: 700;
-		font-size: 2rem;
-		letter-spacing: -0.02em;
-		color: #1a1a1a;
+		font-size: 0.9rem;
 	}
 
-	.theme-ink .view-count,
-	.theme-ink .view-subtitle {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: #999;
+	.theme-bento .suggestion-title {
+		color: #e5e5e7;
+		font-weight: 500;
+		font-size: 0.95rem;
 	}
 
-	.theme-ink .view-header {
-		padding-bottom: 1rem;
-		border-bottom: 0.5px solid #d0cfc8;
-		margin-bottom: 2rem;
+	.theme-bento .suggestion-title:hover { color: #818cf8; }
+
+	.theme-bento .suggestion-duration {
+		color: #666;
+		font-weight: 500;
 	}
 
-	.theme-ink .add-input-bar {
-		background: transparent;
-		border: none;
-		border-bottom: 0.5px solid #d0cfc8;
-		border-radius: 0;
-		padding: 0.8rem 0;
-		margin-bottom: 1.5rem;
+	.theme-bento .score-track {
+		background: #252528;
+		height: 6px;
+		border-radius: 3px;
 	}
 
-	.theme-ink .add-icon {
-		color: #c0392b;
-		font-family: 'Playfair Display', serif;
+	.theme-bento .score-fill {
+		background: #6366f1;
+		border-radius: 3px;
 	}
 
-	.theme-ink .add-placeholder {
-		font-family: 'Playfair Display', serif;
-		font-style: italic;
-		color: #b0afa8;
+	.theme-bento .score-value {
+		color: #818cf8;
+		font-weight: 600;
+		font-size: 0.7rem;
 	}
 
-	.theme-ink .task-item {
-		border-bottom: 0.5px solid #e8e7e0;
-		padding: 1.1rem 0;
+	.theme-bento .score-breakdown {
+		border-top: 1px solid #2a2a2c;
 	}
 
-	.theme-ink .checkbox-inner {
-		border: 1.5px solid #c0392b;
-		border-radius: 2px;
-		width: 16px;
-		height: 16px;
+	.theme-bento .breakdown-label {
+		color: #555;
+		font-weight: 500;
 	}
 
-	.theme-ink .task-title {
-		font-family: 'Playfair Display', serif;
-		font-size: 1rem;
-		font-weight: 400;
-		color: #1a1a1a;
-		line-height: 1.4;
-	}
-
-	.theme-ink .badge {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.55rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		font-variant: small-caps;
-		background: transparent;
+	.theme-bento .factor-name {
 		color: #888;
-		padding: 0;
-		margin-right: 0.6rem;
+		font-size: 0.68rem;
 	}
 
-	.theme-ink .badge-priority { color: #c0392b; }
-	.theme-ink .badge-urgent { color: #c0392b; font-weight: 600; }
-	.theme-ink .badge-due { color: #c0392b; }
-	.theme-ink .badge-tag { color: #666; }
-
-	/* Ink: suggestions */
-	.theme-ink .suggestion-item {
-		border-bottom: 0.5px solid #e8e7e0;
-		padding: 1.2rem 0;
-	}
-
-	.theme-ink .suggestion-rank {
-		font-family: 'Playfair Display', serif;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: #c0392b;
-	}
-
-	.theme-ink .suggestion-title {
-		font-family: 'Playfair Display', serif;
-		color: #1a1a1a;
-		font-size: 1.05rem;
-	}
-
-	.theme-ink .suggestion-title:hover { color: #c0392b; }
-
-	.theme-ink .suggestion-duration {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.65rem;
-		color: #999;
-	}
-
-	.theme-ink .score-track {
-		background: #e8e7e0;
-		height: 1px;
-	}
-
-	.theme-ink .score-fill {
-		background: #c0392b;
-		height: 1px;
-	}
-
-	.theme-ink .score-value {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.6rem;
-		color: #999;
-	}
-
-	.theme-ink .score-breakdown {
-		border-top: 0.5px solid #e8e7e0;
-	}
-
-	.theme-ink .breakdown-label {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.55rem;
-		letter-spacing: 0.1em;
-		color: #b0afa8;
-	}
-
-	.theme-ink .factor-name {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.6rem;
-		color: #888;
-	}
-
-	.theme-ink .factor-track {
-		background: #e8e7e0;
-		height: 1px;
-	}
-
-	.theme-ink .factor-fill {
-		background: #c0392b;
-		height: 1px;
-	}
-
-	.theme-ink .factor-value {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.55rem;
-		color: #b0afa8;
-	}
-
-	/* Ink: habits */
-	.theme-ink .habit-item {
-		border-bottom: 0.5px solid #e8e7e0;
-		padding: 1rem 0;
-	}
-
-	.theme-ink .habit-status-indicator {
-		border: 1.5px solid #c0392b;
+	.theme-bento .factor-track {
+		background: #252528;
+		height: 4px;
 		border-radius: 2px;
-		width: 22px;
-		height: 22px;
 	}
 
-	.theme-ink .habit-check { color: #c0392b; }
-	.theme-ink .habit-warning { color: #c0392b; }
-	.theme-ink .habit-empty { color: #d0cfc8; }
-
-	.theme-ink .habit-title {
-		font-family: 'Playfair Display', serif;
-		font-weight: 400;
-	}
-
-	.theme-ink .habit-freq {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.55rem;
-		letter-spacing: 0.1em;
-		color: #b0afa8;
-	}
-
-	.theme-ink .habit-stat {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.6rem;
-		color: #999;
-	}
-
-	.theme-ink .habit-stat-sep { color: #d0cfc8; }
-
-	.theme-ink .habit-rate-bar {
-		background: #e8e7e0;
-		height: 1px;
-	}
-
-	.theme-ink .habit-rate-fill {
-		background: #c0392b;
-		height: 1px;
-	}
-
-	.theme-ink .habit-log-btn {
-		font-family: 'JetBrains Mono', monospace;
-		background: transparent;
-		border: 1px solid #d0cfc8;
-		color: #888;
+	.theme-bento .factor-fill {
+		background: #6366f1;
 		border-radius: 2px;
-		font-size: 0.6rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		padding: 0.35rem 0.7rem;
 	}
 
-	.theme-ink .habit-log-btn:hover { border-color: #c0392b; color: #c0392b; }
-	.theme-ink .habit-log-btn.logged { color: #c0392b; border-color: #c0392b; }
+	.theme-bento .factor-value { color: #6366f1; font-weight: 500; }
 
-	.theme-ink .habit-done { opacity: 0.55; }
+	/* Bento: habits */
+	.theme-bento .habit-item {
+		background: #1c1c1e;
+		border: 1px solid #2a2a2c;
+		border-radius: 10px;
+		padding: 0.85rem 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	.theme-bento .habit-status-indicator {
+		border-radius: 50%;
+		width: 24px;
+		height: 24px;
+	}
+
+	.theme-bento .habit-check { color: #fff; }
+
+	.theme-bento .habit-item:has(.habit-check) .habit-status-indicator {
+		background: #86cb92;
+	}
+
+	.theme-bento .habit-item:has(.habit-warning) .habit-status-indicator {
+		background: #f59e0b;
+	}
+
+	.theme-bento .habit-warning { color: #fff; }
+
+	.theme-bento .habit-item:has(.habit-empty) .habit-status-indicator {
+		background: #252528;
+		border: 1px solid #3a3a3c;
+	}
+
+	.theme-bento .habit-empty { color: #555; }
+
+	.theme-bento .habit-title {
+		color: #e5e5e7;
+		font-weight: 500;
+	}
+
+	.theme-bento .habit-freq { color: #555; font-weight: 500; }
+
+	.theme-bento .habit-stat {
+		color: #888;
+		font-size: 0.7rem;
+	}
+
+	.theme-bento .habit-stat-sep { color: #333; }
+
+	.theme-bento .habit-rate-bar {
+		background: #252528;
+		height: 4px;
+		border-radius: 2px;
+	}
+
+	.theme-bento .habit-rate-fill {
+		background: #6366f1;
+		border-radius: 2px;
+	}
+
+	.theme-bento .habit-log-btn {
+		background: rgba(134, 203, 146, 0.1);
+		border: 1px solid rgba(134, 203, 146, 0.25);
+		color: #86cb92;
+		border-radius: 8px;
+		font-weight: 500;
+		font-size: 0.72rem;
+	}
+
+	.theme-bento .habit-log-btn:hover {
+		background: rgba(134, 203, 146, 0.18);
+	}
+
+	.theme-bento .habit-log-btn.logged {
+		background: #252528;
+		border-color: #3a3a3c;
+		color: #666;
+	}
+
+	.theme-bento .habit-done { opacity: 0.6; }
 
 	/* ======================================================
-	   THEME: NEON — Cyberpunk Dashboard
-	   Feels like: hacker terminal meets Tron
+	   THEME: BENTO ALT — Dark with Periwinkle Accent
+	   Feels like: a cooler, moodier Bento variant
 	   ====================================================== */
-	.theme-neon {
-		background: #000;
-		color: #00fff2;
-		font-family: 'JetBrains Mono', 'Fira Code', monospace;
-		background-image: repeating-linear-gradient(
-			0deg,
-			transparent,
-			transparent 2px,
-			rgba(0, 255, 242, 0.015) 2px,
-			rgba(0, 255, 242, 0.015) 4px
-		);
+	.theme-bento-alt {
+		background: #0f0f12;
+		color: #e5e5e7;
+		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
 	}
 
-	.theme-neon .themed-content { max-width: 750px; }
-
-	.theme-neon .view-title {
-		font-family: 'JetBrains Mono', monospace;
-		font-weight: 300;
-		font-size: 1.3rem;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: #00fff2;
-		text-shadow: 0 0 10px rgba(0, 255, 242, 0.5), 0 0 30px rgba(0, 255, 242, 0.2);
-	}
-
-	.theme-neon .view-count,
-	.theme-neon .view-subtitle {
-		color: #ff00aa;
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.15em;
-		text-shadow: 0 0 8px rgba(255, 0, 170, 0.4);
-	}
-
-	.theme-neon .view-header {
-		border-bottom: 1px solid rgba(0, 255, 242, 0.15);
-		padding-bottom: 0.75rem;
-		margin-bottom: 1.5rem;
-	}
-
-	.theme-neon .add-input-bar {
-		background: rgba(0, 255, 242, 0.03);
-		border: 1px solid rgba(0, 255, 242, 0.2);
-		border-radius: 2px;
-		box-shadow: 0 0 8px rgba(0, 255, 242, 0.1), inset 0 0 8px rgba(0, 255, 242, 0.03);
-	}
-
-	.theme-neon .add-icon { color: #00fff2; }
-	.theme-neon .add-placeholder { color: rgba(0, 255, 242, 0.3); }
-
-	.theme-neon .task-item {
-		border-bottom: 1px solid rgba(0, 255, 242, 0.08);
-		padding: 0.7rem 0;
-	}
-
-	.theme-neon .checkbox-inner {
-		border: 1px solid #00fff2;
-		border-radius: 2px;
-		width: 16px;
-		height: 16px;
-		box-shadow: 0 0 4px rgba(0, 255, 242, 0.3);
-	}
-
-	.theme-neon .task-title {
-		color: #e0e0e0;
-		font-size: 0.85rem;
-		font-weight: 400;
-	}
-
-	.theme-neon .badge {
-		font-size: 0.55rem;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		border: 1px solid rgba(0, 255, 242, 0.25);
-		background: rgba(0, 255, 242, 0.05);
-		color: #00fff2;
-		border-radius: 2px;
-		padding: 0.12rem 0.4rem;
-	}
-
-	.theme-neon .badge-priority {
-		border-color: rgba(255, 0, 170, 0.4);
-		background: rgba(255, 0, 170, 0.08);
-		color: #ff00aa;
-	}
-
-	.theme-neon .badge-urgent {
-		border-color: rgba(255, 0, 170, 0.6);
-		background: rgba(255, 0, 170, 0.15);
-		color: #ff00aa;
-		box-shadow: 0 0 6px rgba(255, 0, 170, 0.3);
-	}
-
-	.theme-neon .badge-due {
-		border-color: rgba(255, 0, 170, 0.3);
-		color: #ff00aa;
-	}
-
-	.theme-neon .badge-energy {
-		border-color: rgba(0, 255, 136, 0.3);
-		background: rgba(0, 255, 136, 0.05);
-		color: #00ff88;
-	}
-
-	.theme-neon .badge-tag {
-		color: rgba(0, 255, 242, 0.6);
-		border-color: rgba(0, 255, 242, 0.15);
-	}
-
-	/* Neon: suggestions */
-	.theme-neon .suggestion-item {
-		border-bottom: 1px solid rgba(0, 255, 242, 0.08);
-		padding: 0.8rem 0;
-	}
-
-	.theme-neon .suggestion-rank {
-		color: #ff00aa;
+	.theme-bento-alt .view-title {
 		font-weight: 600;
-		text-shadow: 0 0 8px rgba(255, 0, 170, 0.4);
+		font-size: 1.5rem;
+		color: #e5e5e7;
+		letter-spacing: -0.01em;
 	}
 
-	.theme-neon .suggestion-title {
-		color: #e0e0e0;
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.85rem;
-		font-weight: 400;
+	.theme-bento-alt .view-count,
+	.theme-bento-alt .view-subtitle {
+		color: #9b7ede;
+		font-weight: 500;
+		font-size: 0.8rem;
 	}
 
-	.theme-neon .suggestion-title:hover {
-		color: #00fff2;
-		text-shadow: 0 0 6px rgba(0, 255, 242, 0.4);
+	.theme-bento-alt .view-header {
+		margin-bottom: 1.25rem;
 	}
 
-	.theme-neon .suggestion-duration {
-		color: rgba(0, 255, 242, 0.5);
-		font-size: 0.65rem;
+	.theme-bento-alt .add-input-bar {
+		background: #1a1a22;
+		border: 1px solid #2e2d4d;
+		border-radius: 10px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 	}
 
-	/* Neon: LED-style segmented score bars */
-	.theme-neon .score-track {
-		background: rgba(0, 255, 242, 0.06);
-		height: 8px;
-		border-radius: 1px;
-		border: 1px solid rgba(0, 255, 242, 0.15);
+	.theme-bento-alt .add-icon { color: #9b7ede; }
+	.theme-bento-alt .add-placeholder { color: #555; }
+
+	.theme-bento-alt .task-item {
+		background: #1a1a22;
+		border: 1px solid #2e2d4d;
+		border-radius: 10px;
+		padding: 0.8rem 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
-	.theme-neon .score-fill {
-		background: repeating-linear-gradient(
-			90deg,
-			#00fff2 0px,
-			#00fff2 6px,
-			transparent 6px,
-			transparent 8px
-		);
-		border-radius: 0;
-		box-shadow: 0 0 8px rgba(0, 255, 242, 0.4);
+	.theme-bento-alt .checkbox-inner {
+		border: 2px solid #9b7ede;
+		border-radius: 50%;
+		width: 18px;
+		height: 18px;
 	}
 
-	.theme-neon .score-value {
-		color: #00fff2;
-		font-size: 0.65rem;
-		text-shadow: 0 0 4px rgba(0, 255, 242, 0.3);
+	.theme-bento-alt .task-title {
+		color: #e5e5e7;
+		font-weight: 500;
+		font-size: 0.93rem;
 	}
 
-	.theme-neon .score-breakdown {
-		border-top: 1px solid rgba(0, 255, 242, 0.1);
-	}
-
-	.theme-neon .breakdown-label {
-		color: #ff00aa;
-		letter-spacing: 0.15em;
-		text-shadow: 0 0 4px rgba(255, 0, 170, 0.3);
-	}
-
-	.theme-neon .factor-name { color: rgba(0, 255, 242, 0.5); font-size: 0.6rem; }
-
-	.theme-neon .factor-track {
-		background: rgba(0, 255, 136, 0.06);
-		height: 6px;
-		border: 1px solid rgba(0, 255, 136, 0.15);
-		border-radius: 1px;
-	}
-
-	.theme-neon .factor-fill {
-		background: repeating-linear-gradient(
-			90deg,
-			#00ff88 0px,
-			#00ff88 4px,
-			transparent 4px,
-			transparent 6px
-		);
-		border-radius: 0;
-		box-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
-	}
-
-	.theme-neon .factor-value { color: #00ff88; }
-
-	/* Neon: habits */
-	.theme-neon .habit-item {
-		border-bottom: 1px solid rgba(0, 255, 242, 0.08);
-	}
-
-	.theme-neon .habit-status-indicator {
-		border: 1px solid rgba(0, 255, 242, 0.4);
-		border-radius: 2px;
-		width: 22px;
-		height: 22px;
-	}
-
-	.theme-neon .habit-check {
-		color: #00ff88;
-		text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
-	}
-
-	.theme-neon .habit-warning {
-		color: #ff00aa;
-		text-shadow: 0 0 6px rgba(255, 0, 170, 0.5);
-	}
-
-	.theme-neon .habit-empty { color: rgba(0, 255, 242, 0.2); }
-
-	.theme-neon .habit-title { color: #e0e0e0; font-size: 0.85rem; }
-
-	.theme-neon .habit-freq {
-		color: rgba(255, 0, 170, 0.5);
-		font-size: 0.55rem;
-		letter-spacing: 0.1em;
-	}
-
-	.theme-neon .habit-stat {
-		color: rgba(0, 255, 242, 0.5);
+	.theme-bento-alt .badge {
+		background: #22222e;
+		color: #999;
+		border-radius: 5px;
 		font-size: 0.6rem;
+		font-weight: 500;
+		padding: 0.15rem 0.45rem;
 	}
 
-	.theme-neon .habit-stat-sep { color: rgba(0, 255, 242, 0.15); }
+	.theme-bento-alt .badge-priority {
+		background: rgba(155, 126, 222, 0.12);
+		color: #b9a4e8;
+	}
 
-	.theme-neon .habit-rate-bar {
-		background: rgba(0, 255, 136, 0.06);
+	.theme-bento-alt .badge-urgent {
+		background: rgba(182, 23, 75, 0.12);
+		color: #e04878;
+	}
+
+	.theme-bento-alt .badge-high {
+		background: rgba(155, 126, 222, 0.12);
+		color: #9b7ede;
+	}
+
+	.theme-bento-alt .badge-energy {
+		background: rgba(9, 129, 74, 0.1);
+		color: #09814a;
+	}
+
+	.theme-bento-alt .badge-due {
+		background: rgba(182, 23, 75, 0.1);
+		color: #b6174b;
+	}
+
+	.theme-bento-alt .badge-tag {
+		color: #777;
+	}
+
+	/* Bento Alt: suggestions */
+	.theme-bento-alt .suggestion-item {
+		background: #1a1a22;
+		border: 1px solid #2e2d4d;
+		border-radius: 10px;
+		padding: 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	.theme-bento-alt .suggestion-rank {
+		color: #9b7ede;
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+
+	.theme-bento-alt .suggestion-title {
+		color: #e5e5e7;
+		font-weight: 500;
+		font-size: 0.95rem;
+	}
+
+	.theme-bento-alt .suggestion-title:hover { color: #b9a4e8; }
+
+	.theme-bento-alt .suggestion-duration {
+		color: #666;
+		font-weight: 500;
+	}
+
+	.theme-bento-alt .score-track {
+		background: #22222e;
 		height: 6px;
-		border: 1px solid rgba(0, 255, 136, 0.15);
-		border-radius: 1px;
+		border-radius: 3px;
 	}
 
-	.theme-neon .habit-rate-fill {
-		background: repeating-linear-gradient(
-			90deg,
-			#00ff88 0px,
-			#00ff88 6px,
-			transparent 6px,
-			transparent 8px
-		);
-		border-radius: 0;
-		box-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+	.theme-bento-alt .score-fill {
+		background: #9b7ede;
+		border-radius: 3px;
 	}
 
-	.theme-neon .habit-log-btn {
-		background: rgba(0, 255, 242, 0.05);
-		border: 1px solid rgba(0, 255, 242, 0.3);
-		color: #00fff2;
+	.theme-bento-alt .score-value {
+		color: #b9a4e8;
+		font-weight: 600;
+		font-size: 0.7rem;
+	}
+
+	.theme-bento-alt .score-breakdown {
+		border-top: 1px solid #2e2d4d;
+	}
+
+	.theme-bento-alt .breakdown-label {
+		color: #555;
+		font-weight: 500;
+	}
+
+	.theme-bento-alt .factor-name {
+		color: #888;
+		font-size: 0.68rem;
+	}
+
+	.theme-bento-alt .factor-track {
+		background: #22222e;
+		height: 4px;
 		border-radius: 2px;
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.6rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		box-shadow: 0 0 6px rgba(0, 255, 242, 0.15);
 	}
 
-	.theme-neon .habit-log-btn:hover {
-		background: rgba(0, 255, 242, 0.1);
-		box-shadow: 0 0 12px rgba(0, 255, 242, 0.3);
+	.theme-bento-alt .factor-fill {
+		background: #09814a;
+		border-radius: 2px;
 	}
 
-	.theme-neon .habit-log-btn.logged {
-		border-color: rgba(0, 255, 136, 0.4);
-		color: #00ff88;
-		box-shadow: 0 0 6px rgba(0, 255, 136, 0.2);
+	.theme-bento-alt .factor-value { color: #09814a; font-weight: 500; }
+
+	/* Bento Alt: habits */
+	.theme-bento-alt .habit-item {
+		background: #1a1a22;
+		border: 1px solid #2e2d4d;
+		border-radius: 10px;
+		padding: 0.85rem 1rem;
+		margin-bottom: 0.4rem;
+		border-bottom: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
-	.theme-neon .habit-done { opacity: 0.6; }
+	.theme-bento-alt .habit-status-indicator {
+		border-radius: 50%;
+		width: 24px;
+		height: 24px;
+	}
+
+	.theme-bento-alt .habit-check { color: #fff; }
+
+	.theme-bento-alt .habit-item:has(.habit-check) .habit-status-indicator {
+		background: #09814a;
+	}
+
+	.theme-bento-alt .habit-item:has(.habit-warning) .habit-status-indicator {
+		background: #b6174b;
+	}
+
+	.theme-bento-alt .habit-warning { color: #fff; }
+
+	.theme-bento-alt .habit-item:has(.habit-empty) .habit-status-indicator {
+		background: #22222e;
+		border: 1px solid #3a3a4c;
+	}
+
+	.theme-bento-alt .habit-empty { color: #555; }
+
+	.theme-bento-alt .habit-title {
+		color: #e5e5e7;
+		font-weight: 500;
+	}
+
+	.theme-bento-alt .habit-freq { color: #555; font-weight: 500; }
+
+	.theme-bento-alt .habit-stat {
+		color: #888;
+		font-size: 0.7rem;
+	}
+
+	.theme-bento-alt .habit-stat-sep { color: #333; }
+
+	.theme-bento-alt .habit-rate-bar {
+		background: #22222e;
+		height: 4px;
+		border-radius: 2px;
+	}
+
+	.theme-bento-alt .habit-rate-fill {
+		background: #09814a;
+		border-radius: 2px;
+	}
+
+	.theme-bento-alt .habit-log-btn {
+		background: rgba(9, 129, 74, 0.1);
+		border: 1px solid rgba(9, 129, 74, 0.25);
+		color: #09814a;
+		border-radius: 8px;
+		font-weight: 500;
+		font-size: 0.72rem;
+	}
+
+	.theme-bento-alt .habit-log-btn:hover {
+		background: rgba(9, 129, 74, 0.18);
+	}
+
+	.theme-bento-alt .habit-log-btn.logged {
+		background: #22222e;
+		border-color: #3a3a4c;
+		color: #666;
+	}
+
+	.theme-bento-alt .habit-done { opacity: 0.6; }
 
 	/* ======================================================
 	   THEME: CLAY — Warm Organic
@@ -1480,518 +1471,264 @@
 	.theme-clay .habit-done { opacity: 0.7; }
 
 	/* ======================================================
-	   THEME: BLUEPRINT — Technical Precision
-	   Feels like: mission control dashboard
+	   THEME: CLAY ALT — Rosewood Organic
+	   Feels like: warm blush productivity with a romantic edge
 	   ====================================================== */
-	.theme-blueprint {
-		background: #0a1628;
-		color: #e8ecf1;
-		font-family: 'IBM Plex Sans', -apple-system, sans-serif;
-		background-image:
-			linear-gradient(rgba(74, 144, 217, 0.04) 1px, transparent 1px),
-			linear-gradient(90deg, rgba(74, 144, 217, 0.04) 1px, transparent 1px);
-		background-size: 20px 20px;
+	.theme-clay-alt {
+		background: #fdecef;
+		color: #0f110c;
+		font-family: 'Nunito', -apple-system, sans-serif;
 	}
 
-	.theme-blueprint .themed-content { max-width: 760px; }
+	.theme-clay-alt .view-title {
+		font-family: 'Nunito', sans-serif;
+		font-weight: 800;
+		font-size: 1.6rem;
+		color: #0f110c;
+	}
 
-	.theme-blueprint .view-title {
-		font-family: 'IBM Plex Sans', sans-serif;
+	.theme-clay-alt .view-count,
+	.theme-clay-alt .view-subtitle {
 		font-weight: 600;
-		font-size: 1.2rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: #e8ecf1;
+		color: #9d6381;
+		font-size: 0.8rem;
 	}
 
-	.theme-blueprint .view-count,
-	.theme-blueprint .view-subtitle {
-		font-size: 0.7rem;
-		color: #4a90d9;
-		font-weight: 500;
-		letter-spacing: 0.04em;
-	}
-
-	.theme-blueprint .view-header {
-		border-bottom: 1px solid rgba(74, 144, 217, 0.2);
-		padding-bottom: 0.6rem;
+	.theme-clay-alt .view-header {
 		margin-bottom: 1.25rem;
 	}
 
-	.theme-blueprint .add-input-bar {
-		background: rgba(74, 144, 217, 0.05);
-		border: 1px solid rgba(74, 144, 217, 0.2);
-		border-radius: 2px;
-		padding: 0.55rem 0.8rem;
+	.theme-clay-alt .add-input-bar {
+		background: #fff5f6;
+		border: 2px solid #e8d0d6;
+		border-radius: 14px;
+		padding: 0.85rem 1.1rem;
+		box-shadow: 0 2px 8px rgba(157, 99, 129, 0.08);
 	}
 
-	.theme-blueprint .add-icon { color: #4a90d9; font-weight: 500; }
-	.theme-blueprint .add-placeholder { color: rgba(232, 236, 241, 0.25); font-size: 0.8rem; }
+	.theme-clay-alt .add-icon { color: #9d6381; font-weight: 800; }
+	.theme-clay-alt .add-placeholder { color: #84828f; }
 
-	.theme-blueprint .task-item {
-		border-bottom: 1px solid rgba(74, 144, 217, 0.1);
-		padding: 0.55rem 0;
+	.theme-clay-alt .task-item {
+		background: #fff5f6;
+		border-radius: 14px;
+		padding: 0.9rem 1rem;
+		margin-bottom: 0.5rem;
+		border-bottom: none;
+		box-shadow: 0 2px 8px rgba(157, 99, 129, 0.08);
 	}
 
-	.theme-blueprint .checkbox-inner {
-		border: 1px solid #4a90d9;
-		border-radius: 2px;
-		width: 14px;
-		height: 14px;
-	}
-
-	.theme-blueprint .task-title {
-		color: #e8ecf1;
-		font-size: 0.85rem;
-		font-weight: 400;
-	}
-
-	.theme-blueprint .badge {
-		font-size: 0.55rem;
-		font-weight: 500;
-		border: 1px solid rgba(74, 144, 217, 0.25);
-		background: rgba(74, 144, 217, 0.08);
-		color: #4a90d9;
-		border-radius: 2px;
-		padding: 0.1rem 0.35rem;
-		letter-spacing: 0.02em;
-	}
-
-	.theme-blueprint .badge-priority {
-		border-color: rgba(240, 160, 48, 0.4);
-		background: rgba(240, 160, 48, 0.1);
-		color: #f0a030;
-	}
-
-	.theme-blueprint .badge-urgent {
-		border-color: rgba(240, 80, 48, 0.5);
-		background: rgba(240, 80, 48, 0.12);
-		color: #f05030;
-	}
-
-	.theme-blueprint .badge-energy {
-		border-color: rgba(74, 144, 217, 0.3);
-		color: rgba(74, 144, 217, 0.8);
-	}
-
-	.theme-blueprint .badge-due {
-		border-color: rgba(240, 160, 48, 0.3);
-		color: #f0a030;
-	}
-
-	.theme-blueprint .badge-tag {
-		color: rgba(232, 236, 241, 0.5);
-		border-color: rgba(232, 236, 241, 0.12);
-		background: rgba(232, 236, 241, 0.04);
-	}
-
-	/* Blueprint: suggestions */
-	.theme-blueprint .suggestion-item {
-		border-bottom: 1px solid rgba(74, 144, 217, 0.1);
-		padding: 0.65rem 0;
-	}
-
-	.theme-blueprint .suggestion-rank {
-		font-family: 'JetBrains Mono', monospace;
-		color: #4a90d9;
-		font-weight: 500;
-		font-size: 0.75rem;
-	}
-
-	.theme-blueprint .suggestion-title {
-		font-family: 'IBM Plex Sans', sans-serif;
-		color: #e8ecf1;
-		font-size: 0.88rem;
-		font-weight: 500;
-	}
-
-	.theme-blueprint .suggestion-title:hover { color: #4a90d9; }
-
-	.theme-blueprint .suggestion-duration {
-		font-family: 'JetBrains Mono', monospace;
-		color: rgba(74, 144, 217, 0.6);
-		font-size: 0.6rem;
-	}
-
-	/* Blueprint: gauge-style score bars with numerical labels */
-	.theme-blueprint .score-track {
-		background: rgba(74, 144, 217, 0.1);
-		height: 6px;
-		border-radius: 1px;
-		border: 1px solid rgba(74, 144, 217, 0.15);
-	}
-
-	.theme-blueprint .score-fill {
-		background: #4a90d9;
-		border-radius: 0;
-	}
-
-	.theme-blueprint .score-value {
-		font-family: 'JetBrains Mono', monospace;
-		color: #4a90d9;
-		font-weight: 500;
-		font-size: 0.65rem;
-	}
-
-	.theme-blueprint .score-breakdown {
-		border-top: 1px solid rgba(74, 144, 217, 0.12);
-	}
-
-	.theme-blueprint .breakdown-label {
-		color: rgba(74, 144, 217, 0.5);
-		font-weight: 500;
-		letter-spacing: 0.08em;
-	}
-
-	.theme-blueprint .factor-name {
-		font-size: 0.6rem;
-		color: rgba(232, 236, 241, 0.45);
-		font-weight: 400;
-	}
-
-	.theme-blueprint .factor-track {
-		background: rgba(74, 144, 217, 0.08);
-		height: 4px;
-		border-radius: 0;
-		border: 1px solid rgba(74, 144, 217, 0.1);
-	}
-
-	.theme-blueprint .factor-fill {
-		background: #4a90d9;
-		border-radius: 0;
-	}
-
-	.theme-blueprint .factor-value {
-		font-family: 'JetBrains Mono', monospace;
-		color: rgba(74, 144, 217, 0.6);
-	}
-
-	/* Blueprint: habits */
-	.theme-blueprint .habit-item {
-		border-bottom: 1px solid rgba(74, 144, 217, 0.1);
-		padding: 0.6rem 0;
-	}
-
-	.theme-blueprint .habit-status-indicator {
-		border: 1px solid rgba(74, 144, 217, 0.3);
-		border-radius: 2px;
+	.theme-clay-alt .checkbox-inner {
+		border: 2px solid #9d6381;
+		border-radius: 50%;
 		width: 20px;
 		height: 20px;
 	}
 
-	.theme-blueprint .habit-check { color: #4a90d9; }
-	.theme-blueprint .habit-warning { color: #f0a030; }
-	.theme-blueprint .habit-empty { color: rgba(74, 144, 217, 0.2); }
-
-	.theme-blueprint .habit-title {
-		color: #e8ecf1;
-		font-size: 0.85rem;
-		font-weight: 500;
-	}
-
-	.theme-blueprint .habit-freq {
-		font-family: 'JetBrains Mono', monospace;
-		color: rgba(74, 144, 217, 0.4);
-		font-size: 0.55rem;
-		letter-spacing: 0.05em;
-	}
-
-	.theme-blueprint .habit-stat {
-		font-family: 'JetBrains Mono', monospace;
-		color: rgba(232, 236, 241, 0.45);
-		font-size: 0.65rem;
-	}
-
-	.theme-blueprint .habit-stat-sep { color: rgba(74, 144, 217, 0.15); }
-
-	.theme-blueprint .habit-rate-bar {
-		background: rgba(74, 144, 217, 0.1);
-		height: 4px;
-		border-radius: 0;
-		border: 1px solid rgba(74, 144, 217, 0.1);
-	}
-
-	.theme-blueprint .habit-rate-fill {
-		background: #4a90d9;
-		border-radius: 0;
-	}
-
-	.theme-blueprint .habit-log-btn {
-		background: rgba(74, 144, 217, 0.1);
-		border: 1px solid rgba(74, 144, 217, 0.3);
-		color: #4a90d9;
-		border-radius: 2px;
-		font-family: 'IBM Plex Sans', sans-serif;
-		font-weight: 500;
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.theme-blueprint .habit-log-btn:hover {
-		background: rgba(74, 144, 217, 0.2);
-	}
-
-	.theme-blueprint .habit-log-btn.logged {
-		border-color: rgba(74, 144, 217, 0.2);
-		color: rgba(74, 144, 217, 0.5);
-	}
-
-	.theme-blueprint .habit-done { opacity: 0.55; }
-
-	/* ======================================================
-	   THEME: BENTO — The One We Ship
-	   Feels like: Arc browser meets Things 3
-	   ====================================================== */
-	.theme-bento {
-		background: #111113;
-		color: #e5e5e7;
-		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-	}
-
-	.theme-bento .view-title {
+	.theme-clay-alt .task-title {
 		font-weight: 600;
-		font-size: 1.5rem;
-		color: #e5e5e7;
-		letter-spacing: -0.01em;
-	}
-
-	.theme-bento .view-count,
-	.theme-bento .view-subtitle {
-		color: #6366f1;
-		font-weight: 500;
-		font-size: 0.8rem;
-	}
-
-	.theme-bento .view-header {
-		margin-bottom: 1.25rem;
-	}
-
-	.theme-bento .add-input-bar {
-		background: #1c1c1e;
-		border: 1px solid #2a2a2c;
-		border-radius: 10px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	.theme-bento .add-icon { color: #6366f1; }
-	.theme-bento .add-placeholder { color: #555; }
-
-	.theme-bento .task-item {
-		background: #1c1c1e;
-		border: 1px solid #2a2a2c;
-		border-radius: 10px;
-		padding: 0.8rem 1rem;
-		margin-bottom: 0.4rem;
-		border-bottom: none;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-	}
-
-	.theme-bento .checkbox-inner {
-		border: 2px solid #6366f1;
-		border-radius: 50%;
-		width: 18px;
-		height: 18px;
-	}
-
-	.theme-bento .task-title {
-		color: #e5e5e7;
-		font-weight: 500;
-		font-size: 0.93rem;
-	}
-
-	.theme-bento .badge {
-		background: #252528;
-		color: #999;
-		border-radius: 5px;
-		font-size: 0.6rem;
-		font-weight: 500;
-		padding: 0.15rem 0.45rem;
-	}
-
-	.theme-bento .badge-priority {
-		background: rgba(99, 102, 241, 0.12);
-		color: #818cf8;
-	}
-
-	.theme-bento .badge-urgent {
-		background: rgba(239, 68, 68, 0.12);
-		color: #f87171;
-	}
-
-	.theme-bento .badge-high {
-		background: rgba(245, 158, 11, 0.12);
-		color: #fbbf24;
-	}
-
-	.theme-bento .badge-energy {
-		background: rgba(16, 185, 129, 0.1);
-		color: #10b981;
-	}
-
-	.theme-bento .badge-due {
-		background: rgba(245, 158, 11, 0.1);
-		color: #f59e0b;
-	}
-
-	.theme-bento .badge-tag {
-		color: #777;
-	}
-
-	/* Bento: suggestions */
-	.theme-bento .suggestion-item {
-		background: #1c1c1e;
-		border: 1px solid #2a2a2c;
-		border-radius: 10px;
-		padding: 1rem;
-		margin-bottom: 0.4rem;
-		border-bottom: none;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-	}
-
-	.theme-bento .suggestion-rank {
-		color: #6366f1;
-		font-weight: 700;
-		font-size: 0.9rem;
-	}
-
-	.theme-bento .suggestion-title {
-		color: #e5e5e7;
-		font-weight: 500;
+		color: #0f110c;
 		font-size: 0.95rem;
 	}
 
-	.theme-bento .suggestion-title:hover { color: #818cf8; }
-
-	.theme-bento .suggestion-duration {
-		color: #666;
-		font-weight: 500;
+	.theme-clay-alt .badge {
+		background: #f3e4e8;
+		color: #84828f;
+		border-radius: 10px;
+		font-size: 0.6rem;
+		font-weight: 700;
+		padding: 0.2rem 0.55rem;
 	}
 
-	/* Bento: smooth gradient score bars */
-	.theme-bento .score-track {
-		background: #252528;
+	.theme-clay-alt .badge-priority {
+		background: #f5dde3;
+		color: #9d6381;
+	}
+
+	.theme-clay-alt .badge-urgent {
+		background: #9d6381;
+		color: #fff;
+	}
+
+	.theme-clay-alt .badge-energy {
+		background: #f0e4ec;
+		color: #612940;
+	}
+
+	.theme-clay-alt .badge-due {
+		background: #f5dde3;
+		color: #9d6381;
+	}
+
+	.theme-clay-alt .badge-tag {
+		background: #ede0e4;
+		color: #84828f;
+	}
+
+	/* Clay Alt: suggestions */
+	.theme-clay-alt .suggestion-item {
+		background: #fff5f6;
+		border-radius: 14px;
+		padding: 1rem;
+		margin-bottom: 0.5rem;
+		border-bottom: none;
+		box-shadow: 0 2px 8px rgba(157, 99, 129, 0.08);
+	}
+
+	.theme-clay-alt .suggestion-rank {
+		background: #9d6381;
+		color: #fff;
+		border-radius: 50%;
+		width: 28px;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.7rem;
+		font-weight: 800;
+		min-width: 28px;
+	}
+
+	.theme-clay-alt .suggestion-title {
+		font-family: 'Nunito', sans-serif;
+		color: #0f110c;
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.theme-clay-alt .suggestion-title:hover { color: #9d6381; }
+
+	.theme-clay-alt .suggestion-duration {
+		color: #84828f;
+		font-weight: 600;
+	}
+
+	.theme-clay-alt .score-track {
+		background: #e8d0d6;
+		height: 8px;
+		border-radius: 4px;
+	}
+
+	.theme-clay-alt .score-fill {
+		background: #9d6381;
+		border-radius: 4px;
+	}
+
+	.theme-clay-alt .score-value {
+		color: #9d6381;
+		font-weight: 700;
+		font-size: 0.7rem;
+	}
+
+	.theme-clay-alt .score-breakdown {
+		border-top: 2px solid #f3e4e8;
+	}
+
+	.theme-clay-alt .breakdown-label {
+		color: #84828f;
+		font-weight: 700;
+	}
+
+	.theme-clay-alt .factor-name { color: #84828f; font-weight: 600; }
+
+	.theme-clay-alt .factor-track {
+		background: #e8d0d6;
 		height: 6px;
 		border-radius: 3px;
 	}
 
-	.theme-bento .score-fill {
-		background: linear-gradient(90deg, #6366f1, #10b981);
+	.theme-clay-alt .factor-fill {
+		background: #612940;
 		border-radius: 3px;
 	}
 
-	.theme-bento .score-value {
-		color: #818cf8;
+	.theme-clay-alt .factor-value { color: #612940; font-weight: 600; }
+
+	/* Clay Alt: habits */
+	.theme-clay-alt .habit-item {
+		background: #fff5f6;
+		border-radius: 14px;
+		padding: 0.9rem 1rem;
+		margin-bottom: 0.5rem;
+		border-bottom: none;
+		box-shadow: 0 2px 8px rgba(157, 99, 129, 0.08);
+	}
+
+	.theme-clay-alt .habit-status-indicator {
+		border-radius: 50%;
+		width: 26px;
+		height: 26px;
+	}
+
+	.theme-clay-alt .habit-check {
+		color: #fff;
+	}
+
+	.theme-clay-alt .habit-item:has(.habit-check) .habit-status-indicator {
+		background: #612940;
+	}
+
+	.theme-clay-alt .habit-item:has(.habit-warning) .habit-status-indicator {
+		background: #9d6381;
+	}
+
+	.theme-clay-alt .habit-warning { color: #fff; }
+
+	.theme-clay-alt .habit-item:has(.habit-empty) .habit-status-indicator {
+		background: #e8d0d6;
+	}
+
+	.theme-clay-alt .habit-empty { color: #84828f; }
+
+	.theme-clay-alt .habit-title {
+		font-weight: 700;
+		color: #0f110c;
+	}
+
+	.theme-clay-alt .habit-freq {
+		color: #84828f;
+		font-weight: 700;
+		font-size: 0.6rem;
+	}
+
+	.theme-clay-alt .habit-stat {
+		color: #84828f;
 		font-weight: 600;
 		font-size: 0.7rem;
 	}
 
-	.theme-bento .score-breakdown {
-		border-top: 1px solid #2a2a2c;
+	.theme-clay-alt .habit-stat-sep { color: #e8d0d6; }
+
+	.theme-clay-alt .habit-rate-bar {
+		background: #e8d0d6;
+		height: 6px;
+		border-radius: 3px;
 	}
 
-	.theme-bento .breakdown-label {
-		color: #555;
-		font-weight: 500;
+	.theme-clay-alt .habit-rate-fill {
+		background: #612940;
+		border-radius: 3px;
 	}
 
-	.theme-bento .factor-name {
-		color: #888;
-		font-size: 0.68rem;
-	}
-
-	.theme-bento .factor-track {
-		background: #252528;
-		height: 4px;
-		border-radius: 2px;
-	}
-
-	.theme-bento .factor-fill {
-		background: #10b981;
-		border-radius: 2px;
-	}
-
-	.theme-bento .factor-value { color: #10b981; font-weight: 500; }
-
-	/* Bento: habits — bento-box grid style */
-	.theme-bento .habit-item {
-		background: #1c1c1e;
-		border: 1px solid #2a2a2c;
-		border-radius: 10px;
-		padding: 0.85rem 1rem;
-		margin-bottom: 0.4rem;
-		border-bottom: none;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-	}
-
-	.theme-bento .habit-status-indicator {
-		border-radius: 50%;
-		width: 24px;
-		height: 24px;
-	}
-
-	.theme-bento .habit-check { color: #fff; }
-
-	.theme-bento .habit-item:has(.habit-check) .habit-status-indicator {
-		background: #10b981;
-	}
-
-	.theme-bento .habit-item:has(.habit-warning) .habit-status-indicator {
-		background: #f59e0b;
-	}
-
-	.theme-bento .habit-warning { color: #fff; }
-
-	.theme-bento .habit-item:has(.habit-empty) .habit-status-indicator {
-		background: #252528;
-		border: 1px solid #3a3a3c;
-	}
-
-	.theme-bento .habit-empty { color: #555; }
-
-	.theme-bento .habit-title {
-		color: #e5e5e7;
-		font-weight: 500;
-	}
-
-	.theme-bento .habit-freq { color: #555; font-weight: 500; }
-
-	.theme-bento .habit-stat {
-		color: #888;
+	.theme-clay-alt .habit-log-btn {
+		background: #612940;
+		border: none;
+		color: #fff;
+		border-radius: 12px;
+		font-family: 'Nunito', sans-serif;
+		font-weight: 700;
 		font-size: 0.7rem;
+		padding: 0.4rem 1rem;
 	}
 
-	.theme-bento .habit-stat-sep { color: #333; }
-
-	.theme-bento .habit-rate-bar {
-		background: #252528;
-		height: 4px;
-		border-radius: 2px;
+	.theme-clay-alt .habit-log-btn:hover {
+		background: #4e1f33;
 	}
 
-	.theme-bento .habit-rate-fill {
-		background: linear-gradient(90deg, #6366f1, #10b981);
-		border-radius: 2px;
+	.theme-clay-alt .habit-log-btn.logged {
+		background: #e8d0d6;
+		color: #84828f;
 	}
 
-	.theme-bento .habit-log-btn {
-		background: rgba(16, 185, 129, 0.1);
-		border: 1px solid rgba(16, 185, 129, 0.25);
-		color: #10b981;
-		border-radius: 8px;
-		font-weight: 500;
-		font-size: 0.72rem;
-	}
-
-	.theme-bento .habit-log-btn:hover {
-		background: rgba(16, 185, 129, 0.18);
-	}
-
-	.theme-bento .habit-log-btn.logged {
-		background: #252528;
-		border-color: #3a3a3c;
-		color: #666;
-	}
-
-	.theme-bento .habit-done { opacity: 0.6; }
+	.theme-clay-alt .habit-done { opacity: 0.7; }
 </style>
