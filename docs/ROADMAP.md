@@ -110,9 +110,9 @@
 - [ ] M6.6 — Calendar view
 - [ ] M6.7 — Kanban view
 - [x] M6.8 — Habits dashboard (heatmaps, charts)
-- [ ] M6.9 — Routine player (visual step-through)
-- [ ] M6.10 — Smart mirror / display view
-- [ ] M6.11 — Embed web UI in Go binary (go:embed)
+- [x] M6.9 — Routine player (visual step-through)
+- [x] M6.10 — Smart mirror / display view
+- [x] M6.11 — Embed web UI in Go binary (go:embed)
 - [x] M6.12 — API & UI tests
 
 ---
