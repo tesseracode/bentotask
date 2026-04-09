@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -45,9 +45,10 @@ func respondValidationError(w http.ResponseWriter, message string) {
 	respondError(w, http.StatusUnprocessableEntity, "validation_error", message)
 }
 
-// respondInternalError writes a 500 error.
+// respondInternalError logs the real error and returns a generic 500 response.
 func respondInternalError(w http.ResponseWriter, err error) {
-	respondError(w, http.StatusInternalServerError, "internal_error", fmt.Sprintf("internal error: %v", err))
+	log.Printf("internal error: %v", err)
+	respondError(w, http.StatusInternalServerError, "internal_error", "an internal error occurred")
 }
 
 // collectionResponse wraps items in the ADR-004 envelope.
