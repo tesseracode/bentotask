@@ -30,19 +30,14 @@
 			]);
 			suggestions = suggestRes.items;
 
-			const displays: HabitDisplay[] = [];
-			for (const h of habitsRes.items) {
+			const displays = await Promise.all(habitsRes.items.map(async (h) => {
 				try {
 					const statsRes = await habits.stats(h.id);
-					displays.push({
-						title: h.title,
-						streak: statsRes.stats.current_streak,
-						completedToday: statsRes.stats.completed_today
-					});
+					return { title: h.title, streak: statsRes.stats.current_streak, completedToday: statsRes.stats.completed_today };
 				} catch {
-					displays.push({ title: h.title, streak: 0, completedToday: false });
+					return { title: h.title, streak: 0, completedToday: false };
 				}
-			}
+			}));
 			habitDisplays = displays;
 		} catch (e) {
 			loadError = e instanceof Error ? e.message : 'Failed to load';
