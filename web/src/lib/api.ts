@@ -111,6 +111,8 @@ export interface UpdateTaskRequest {
 	contexts?: string[];
 	box?: string;
 	status?: string;
+	steps?: { title: string; duration?: number; optional?: boolean }[];
+	schedule?: { time?: string; days?: string[] };
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -171,6 +173,9 @@ export const habits = {
 // --- Routines ---
 
 export const routines = {
+	create: (req: { title: string; steps?: { title: string; duration?: number; optional?: boolean }[]; priority?: string; energy?: string }) =>
+		request<TaskJSON>('POST', '/routines', req),
+
 	list: () => request<Collection<TaskJSON>>('GET', '/routines'),
 	get: (id: string) => request<TaskJSON>('GET', `/routines/${id}`)
 };

@@ -28,17 +28,19 @@ type createTaskRequest struct {
 
 // updateTaskRequest is the JSON body for PATCH /tasks/:id.
 type updateTaskRequest struct {
-	Title    *string  `json:"title,omitempty"`
-	Priority *string  `json:"priority,omitempty"`
-	Energy   *string  `json:"energy,omitempty"`
-	Duration *int     `json:"duration,omitempty"`
-	DueDate  *string  `json:"due_date,omitempty"`
-	DueStart *string  `json:"due_start,omitempty"`
-	DueEnd   *string  `json:"due_end,omitempty"`
-	Tags     []string `json:"tags,omitempty"`
-	Contexts []string `json:"contexts,omitempty"`
-	Box      *string  `json:"box,omitempty"`
-	Status   *string  `json:"status,omitempty"`
+	Title    *string                `json:"title,omitempty"`
+	Priority *string                `json:"priority,omitempty"`
+	Energy   *string                `json:"energy,omitempty"`
+	Duration *int                   `json:"duration,omitempty"`
+	DueDate  *string                `json:"due_date,omitempty"`
+	DueStart *string                `json:"due_start,omitempty"`
+	DueEnd   *string                `json:"due_end,omitempty"`
+	Tags     []string               `json:"tags,omitempty"`
+	Contexts []string               `json:"contexts,omitempty"`
+	Box      *string                `json:"box,omitempty"`
+	Status   *string                `json:"status,omitempty"`
+	Steps    []model.RoutineStep    `json:"steps,omitempty"`
+	Schedule *model.RoutineSchedule `json:"schedule,omitempty"`
 }
 
 func (s *Server) handleCreateTask(w http.ResponseWriter, r *http.Request) {
@@ -179,6 +181,17 @@ func (s *Server) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Status != nil {
 			t.Status = model.Status(*req.Status)
+		}
+		if req.Steps != nil {
+			t.Steps = req.Steps
+			total := 0
+			for _, s := range req.Steps {
+				total += s.Duration
+			}
+			t.EstimatedDuration = total
+		}
+		if req.Schedule != nil {
+			t.Schedule = req.Schedule
 		}
 	})
 	s.mu.Unlock()
