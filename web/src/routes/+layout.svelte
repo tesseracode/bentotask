@@ -11,6 +11,8 @@
 	const navItems: { href: string; label: string; icon: string }[] = [
 		{ href: '/', label: 'Inbox', icon: '📥' },
 		{ href: '/today', label: 'Today', icon: '📅' },
+		{ href: '/calendar', label: 'Calendar', icon: '📆' },
+		{ href: '/kanban', label: 'Kanban', icon: '📋' },
 		{ href: '/habits', label: 'Habits', icon: '🔥' },
 		{ href: '/routines', label: 'Routines', icon: '🔄' },
 		{ href: '/mirror', label: 'Mirror', icon: '🪞' },
