@@ -1,55 +1,46 @@
 # Current Handoff
 
 ## Active Task
-- **Task ID**: M6 Complete
-- **Milestone**: M6 — REST API & Web UI
-- **Description**: All 12 M6 items complete
-- **Status**: COMPLETE
-- **Assigned**: 2026-04-10
+- **Task ID**: M7 Integrations (partial)
+- **Milestone**: M7 — Integrations
+- **Description**: Obsidian, Export, Import, Notion
+- **Status**: 4/8 COMPLETE
+- **Assigned**: 2026-04-18
 
 ## Last Session Summary
-- **Sessions 1–14**: M0–M5 + M6 Groups A–D (API, views, themes, go:embed, mirror, routines)
-- **Session 15**: Final M6 items — routine editing + Calendar + Kanban
-  - Part 1: Routine CRUD — edit mode (steps, title, priority), delete with confirm,
-    create routine from web UI with inline step builder
-  - Part 2: Routine player UX — tooltips on all buttons, play mode hint text,
-    keyboard shortcuts (Enter/→ = Next, S = Skip, Esc = Stop)
-  - Part 3: Fix mirror — parallel habit stats loading via Promise.all
-  - Part 4: Calendar view (M6.6) — monthly grid, task pills by due date,
-    month navigation, today highlight
-  - Part 4: Kanban view (M6.7) — columns by status, card-per-task,
-    status dropdown to move between columns, filters out routines/habits
+- **Sessions 1–15**: M0–M6 ALL COMPLETE
+- **Session 16**: M7 partial — Obsidian, Export, Import, Notion
+  - Part 1 (M7.8): Obsidian vault integration — bt obsidian init + wikilink rendering in web UI
+  - Part 2 (M7.5): Export — bt export json, bt export csv with filters and file output
+  - Part 3 (M7.4): Import — bt import todoist (CSV), bt import taskwarrior (JSON)
+  - Part 4 (M7.7): Notion integration — bt notion import with API client + property mapping + mock tests
 
 ## Current State
-- **M0–M6 ALL COMPLETE** (12/12 M6 items)
-- Go backend: 315 tests, 0 lint issues
-- Web UI: 0 svelte-check errors, builds with adapter-static
-- Single binary: `make build` → `./bt serve` serves everything
-- 8 web views: Inbox, Today, Calendar, Kanban, Habits, Routines, Mirror, Design
-- Theme: Bento Alt (dark) via CSS custom properties
-- API: 22 endpoints, steps/schedule updatable via PATCH
+- **M0–M6 ALL COMPLETE**
+- **M7: 4/8 complete** (M7.4, M7.5, M7.7, M7.8)
+- **Deferred M7 items**: M7.1 (CalDAV), M7.2 (Google Calendar), M7.3 (Notifications), M7.6 (Git sync)
+- Go backend: 325+ tests, 0 lint issues
+- Web UI: 0 svelte-check errors
+- New packages: internal/notion/ (Notion API client + import)
+- New CLI commands: bt obsidian init, bt export json/csv, bt import todoist/taskwarrior, bt notion import
 
-## M6 Summary — All 12 Items
+## M7 Status
 
 | Item | Description | Status |
 |------|-------------|--------|
-| M6.1 | REST API design (ADR-004) | ✅ |
-| M6.2 | API server (chi, 22 endpoints) | ✅ |
-| M6.3 | SvelteKit scaffolding | ✅ |
-| M6.4 | Inbox (filters, expand, edit) | ✅ |
-| M6.5 | Today (suggest, plan, controls) | ✅ |
-| M6.6 | Calendar (monthly grid) | ✅ |
-| M6.7 | Kanban (status columns) | ✅ |
-| M6.8 | Habits dashboard (streaks, stats) | ✅ |
-| M6.9 | Routine player (timers, keyboard) | ✅ |
-| M6.10 | Smart mirror (full-screen display) | ✅ |
-| M6.11 | go:embed (single binary) | ✅ |
-| M6.12 | API integration tests (16) | ✅ |
+| M7.1 | CalDAV (Apple/Nextcloud) | ⏳ Deferred |
+| M7.2 | Google Calendar | ⏳ Deferred |
+| M7.3 | Notifications | ⏳ Deferred |
+| M7.4 | Import: Todoist + Taskwarrior | ✅ |
+| M7.5 | Export: JSON + CSV | ✅ |
+| M7.6 | Git-based sync | ⏳ Deferred |
+| M7.7 | Notion integration | ✅ |
+| M7.8 | Obsidian vault integration | ✅ |
 
 ## Next Steps
-- M7: Sync & external integrations (CalDAV, Google Calendar)
-- Future: Dark/light mode toggle, design polish, drag-and-drop Kanban
-- Future: PWA support, notifications
+- M7.1–M7.3, M7.6: CalDAV, Google Calendar, notifications, git sync (more infrastructure needed)
+- M8: Desktop app & distribution (Wails, cross-compilation, installers)
+- Future: dark/light mode toggle, PWA, drag-and-drop Kanban
 
 ## Blockers
 - None

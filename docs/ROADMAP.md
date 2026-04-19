@@ -118,36 +118,51 @@
 ---
 
 ## Milestone 7: Integrations (Phase 5)
-**Goal**: Calendar sync, reminders, import/export.
+**Goal**: Calendar sync, reminders, import/export, Notion & Obsidian.
 
 - [ ] M7.1 — CalDAV client (Apple Calendar, Nextcloud)
 - [ ] M7.2 — Google Calendar API integration
 - [ ] M7.3 — Notification system (system notifications, webhooks)
-- [ ] M7.4 — Import: Todoist, Taskwarrior, Notion markdown
-- [ ] M7.5 — Export: iCal, JSON, CSV
+- [x] M7.4 — Import: Todoist, Taskwarrior
+- [x] M7.5 — Export: iCal, JSON, CSV
 - [ ] M7.6 — Git-based sync between devices
+- [x] M7.7 — Notion integration (import databases as tasks, export tasks to Notion)
+- [x] M7.8 — Obsidian vault integration (shared data dir, wikilink support, .obsidian compat)
 
 ---
 
-## Milestone 8: Knowledge Base (Phase 6)
+## Milestone 8: Desktop App & Distribution (Phase 6)
+**Goal**: Native desktop app and cross-platform installers.
+
+- [ ] M8.1 — `bt serve --open` auto-launch browser mode
+- [ ] M8.2 — Wails native desktop app (Go + native webview, no Electron)
+- [ ] M8.3 — macOS distribution (.app bundle, .dmg installer)
+- [ ] M8.4 — Windows distribution (.exe, installer via Inno Setup/NSIS)
+- [ ] M8.5 — Linux distribution (AppImage, .desktop file, optional Flatpak)
+- [ ] M8.6 — Cross-compilation Makefile targets (darwin/amd64, darwin/arm64, linux/amd64, windows/amd64)
+- [ ] M8.7 — CI release pipeline (GitHub Actions: build all platforms on tag push)
+
+---
+
+## Milestone 9: Knowledge Base (Phase 7)
 **Goal**: Second brain — notes, documents, concept mapping.
 
-- [ ] M8.1 — Notes system with bi-directional links
-- [ ] M8.2 — Document & image attachments
-- [ ] M8.3 — Knowledge graph visualization
-- [ ] M8.4 — Link notes to tasks/projects
-- [ ] M8.5 — Daily journal auto-generation
+- [ ] M9.1 — Notes system with bi-directional links
+- [ ] M9.2 — Document & image attachments
+- [ ] M9.3 — Knowledge graph visualization
+- [ ] M9.4 — Link notes to tasks/projects
+- [ ] M9.5 — Daily journal auto-generation
 
 ---
 
-## Milestone 9: AI & Extensions (Phase 7)
+## Milestone 10: AI & Extensions (Phase 8)
 **Goal**: Plugin system, MCP, AI features.
 
-- [ ] M9.1 — Plugin/extension architecture (Wasm via wazero)
-- [ ] M9.2 — MCP server implementation
-- [ ] M9.3 — Natural language task creation
-- [ ] M9.4 — AI-powered scheduling optimization
-- [ ] M9.5 — Smart categorization suggestions
+- [ ] M10.1 — Plugin/extension architecture (Wasm via wazero)
+- [ ] M10.2 — MCP server implementation
+- [ ] M10.3 — Natural language task creation
+- [ ] M10.4 — AI-powered scheduling optimization
+- [ ] M10.5 — Smart categorization suggestions
 
 ---
 
