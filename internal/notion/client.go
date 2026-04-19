@@ -36,33 +36,48 @@ func NewClientWithHTTP(token string, httpClient *http.Client) *Client {
 	}
 }
 
-// QueryDatabase queries all pages in a Notion database.
+// QueryDatabase queries all pages in a Notion database, handling pagination.
+// Notion returns max 100 results per request; this loops until all pages are fetched.
 func (c *Client) QueryDatabase(databaseID string) (*DatabaseQueryResponse, error) {
-	url := fmt.Sprintf("%s/databases/%s/query", baseURL, databaseID)
+	reqURL := fmt.Sprintf("%s/databases/%s/query", baseURL, databaseID)
+	var allResults []Page
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader([]byte("{}")))
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+	body := map[string]string{}
+	for {
+		bodyBytes, _ := json.Marshal(body)
+		req, err := http.NewRequest("POST", reqURL, bytes.NewReader(bodyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+		c.setHeaders(req)
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("query database: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			respBody, _ := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			return nil, fmt.Errorf("notion API error (status %d): %s", resp.StatusCode, string(respBody))
+		}
+
+		var page DatabaseQueryResponse
+		err = json.NewDecoder(resp.Body).Decode(&page)
+		_ = resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("decode response: %w", err)
+		}
+
+		allResults = append(allResults, page.Results...)
+
+		if !page.HasMore || page.NextCursor == "" {
+			break
+		}
+		body["start_cursor"] = page.NextCursor
 	}
-	c.setHeaders(req)
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("query database: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("notion API error (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	var result DatabaseQueryResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
-	}
-
-	return &result, nil
+	return &DatabaseQueryResponse{Results: allResults}, nil
 }
 
 func (c *Client) setHeaders(req *http.Request) {

@@ -118,6 +118,9 @@ func (a *App) AddTask(title string, opts TaskOptions) (*model.Task, error) {
 	if opts.Box != "" {
 		task.Box = opts.Box
 	}
+	if opts.Body != "" {
+		task.Body = opts.Body
+	}
 
 	// Validate
 	if errs := task.Validate(); len(errs) > 0 {
@@ -932,4 +935,5 @@ type TaskOptions struct {
 	Tags     []string
 	Context  []string
 	Box      string
+	Body     string // markdown body content
 }

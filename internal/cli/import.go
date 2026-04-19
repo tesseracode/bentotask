@@ -120,6 +120,11 @@ func runImportTodoist(cmd *cobra.Command, args []string) error {
 			}
 		}
 
+		// Description → body
+		if desc := getCol(row, colIndex, "DESCRIPTION"); desc != "" {
+			opts.Body = desc
+		}
+
 		if _, err := a.AddTask(title, opts); err != nil {
 			cmd.PrintErrf("Warning: failed to import %q: %v\n", title, err)
 			continue
@@ -265,6 +270,15 @@ func runImportTaskwarrior(cmd *cobra.Command, args []string) error {
 		// Project → box
 		if tw.Project != "" {
 			opts.Box = tw.Project
+		}
+
+		// Annotations → body
+		if len(tw.Annotations) > 0 {
+			var lines []string
+			for _, ann := range tw.Annotations {
+				lines = append(lines, ann.Description)
+			}
+			opts.Body = strings.Join(lines, "\n")
 		}
 
 		task, err := a.AddTask(tw.Description, opts)

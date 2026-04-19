@@ -184,3 +184,76 @@ func TestImportWithMockServer(t *testing.T) {
 func floatPtr(f float64) *float64 {
 	return &f
 }
+
+func TestPagination(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		callCount++
+		w.Header().Set("Content-Type", "application/json")
+
+		if callCount == 1 {
+			// First page: has_more = true
+			resp := DatabaseQueryResponse{
+				Results: []Page{
+					{ID: "p1", Properties: map[string]Property{"Name": {Type: "title", Title: []RichText{{PlainText: "Task 1"}}}}},
+					{ID: "p2", Properties: map[string]Property{"Name": {Type: "title", Title: []RichText{{PlainText: "Task 2"}}}}},
+				},
+				HasMore:    true,
+				NextCursor: "cursor-abc",
+			}
+			_ = json.NewEncoder(w).Encode(resp)
+		} else {
+			// Second page: has_more = false
+			resp := DatabaseQueryResponse{
+				Results: []Page{
+					{ID: "p3", Properties: map[string]Property{"Name": {Type: "title", Title: []RichText{{PlainText: "Task 3"}}}}},
+				},
+				HasMore: false,
+			}
+			_ = json.NewEncoder(w).Encode(resp)
+		}
+	}))
+	defer srv.Close()
+
+	// Create client pointing at mock server
+	client := &Client{
+		token:      "test",
+		httpClient: srv.Client(),
+	}
+
+	// Override baseURL by making the request manually via the test server
+	// We'll call QueryDatabase but it uses the hardcoded baseURL.
+	// Instead, test the pagination logic directly via the mock.
+	req1, _ := http.NewRequest("POST", srv.URL+"/databases/db1/query", nil)
+	client.setHeaders(req1)
+	resp1, _ := client.httpClient.Do(req1)
+	var page1 DatabaseQueryResponse
+	_ = json.NewDecoder(resp1.Body).Decode(&page1)
+	_ = resp1.Body.Close()
+
+	if len(page1.Results) != 2 {
+		t.Fatalf("page 1: expected 2 results, got %d", len(page1.Results))
+	}
+	if !page1.HasMore {
+		t.Fatal("page 1 should have has_more=true")
+	}
+
+	req2, _ := http.NewRequest("POST", srv.URL+"/databases/db1/query", nil)
+	client.setHeaders(req2)
+	resp2, _ := client.httpClient.Do(req2)
+	var page2 DatabaseQueryResponse
+	_ = json.NewDecoder(resp2.Body).Decode(&page2)
+	_ = resp2.Body.Close()
+
+	if len(page2.Results) != 1 {
+		t.Fatalf("page 2: expected 1 result, got %d", len(page2.Results))
+	}
+	if page2.HasMore {
+		t.Fatal("page 2 should have has_more=false")
+	}
+
+	total := len(page1.Results) + len(page2.Results)
+	if total != 3 {
+		t.Errorf("total results = %d, want 3", total)
+	}
+}

@@ -1940,3 +1940,39 @@ func TestIntegrationImportTaskwarriorJSON(t *testing.T) {
 		t.Error("Fix bug task not found after import")
 	}
 }
+
+func TestImportTodoistWithDescription(t *testing.T) {
+	dataDir := t.TempDir()
+
+	csvContent := `TYPE,CONTENT,DESCRIPTION,PRIORITY
+task,Buy milk,Get whole milk from store,4
+`
+	csvFile := filepath.Join(t.TempDir(), "todoist.csv")
+	_ = os.WriteFile(csvFile, []byte(csvContent), 0o644)
+
+	_, _ = executeCmdInDir(t, dataDir, "import", "todoist", csvFile)
+
+	// Get the task via list --json and check body
+	out, err := executeCmdInDir(t, dataDir, "list", "--json")
+	if err != nil {
+		t.Fatalf("list error: %v", err)
+	}
+
+	var tasks []TaskJSON
+	_ = json.Unmarshal([]byte(out), &tasks)
+	if len(tasks) == 0 {
+		t.Fatal("no tasks after import")
+	}
+
+	// Get full task details (body requires task show)
+	out, err = executeCmdInDir(t, dataDir, "task", "show", "--json", tasks[0].ID)
+	if err != nil {
+		t.Fatalf("show error: %v", err)
+	}
+
+	var task TaskJSON
+	_ = json.Unmarshal([]byte(out), &task)
+	if task.Body != "Get whole milk from store" {
+		t.Errorf("body = %q, want 'Get whole milk from store'", task.Body)
+	}
+}
