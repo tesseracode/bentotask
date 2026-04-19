@@ -23,3 +23,12 @@
 .due { background: var(--warning-subtle); color: var(--warning-text); }
 .badge.tag,
 .tag { background: var(--bg-elevated); color: var(--text-secondary); }
+
+/* Wikilink styling for Obsidian [[links]] */
+.wikilink {
+	color: var(--accent-primary);
+	background: var(--accent-subtle);
+	padding: 0.1rem 0.3rem;
+	border-radius: 3px;
+	font-size: 0.85em;
+}

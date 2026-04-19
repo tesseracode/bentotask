@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { tasks, type TaskJSON, type UpdateTaskRequest } from '$lib/api';
+	import { renderWikilinks } from '$lib/wikilink';
 
 	let taskList: TaskJSON[] = $state([]);
 	let newTitle = $state('');
@@ -253,7 +254,7 @@
 										<span class="detail-value">{new Date(expandedTask.updated_at).toLocaleString()}</span>
 									</div>
 									{#if expandedTask.body}
-										<pre class="detail-body">{expandedTask.body}</pre>
+										<div class="detail-body">{@html renderWikilinks(expandedTask.body)}</div>
 									{/if}
 									<button class="edit-btn" onclick={startEdit}>Edit</button>
 								{:else}

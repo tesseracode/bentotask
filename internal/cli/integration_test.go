@@ -3,6 +3,8 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -51,6 +53,7 @@ func resetFlags() {
 		linkCmd, unlinkCmd,
 		nowCmd, planCmd, planTodayCmd,
 		serveCmd,
+		obsidianCmd, obsidianInitCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -633,6 +636,7 @@ func TestIntegrationJSONListShowsTags(t *testing.T) {
 	}
 	if tagged == nil {
 		t.Fatal("Tagged task not found in list results")
+		return // unreachable, but satisfies staticcheck
 	}
 	if len(tagged.Tags) != 2 {
 		t.Errorf("list --json tags = %v, want 2 tags [urgent work]", tagged.Tags)
@@ -1666,5 +1670,76 @@ func TestIntegrationNowWithDependencies(t *testing.T) {
 	}
 	if !foundA {
 		t.Error("now should suggest the blocker task")
+	}
+}
+
+// --- bt obsidian init integration tests ---
+
+func TestIntegrationObsidianInit(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "vault", "tasks")
+
+	out, err := executeCmdInDir(t, t.TempDir(), "obsidian", "init", target)
+	if err != nil {
+		t.Fatalf("obsidian init error: %v\noutput: %s", err, out)
+	}
+
+	if !strings.Contains(out, "initialized") {
+		t.Errorf("output should contain 'initialized', got: %s", out)
+	}
+
+	// Verify directories
+	if _, err := os.Stat(filepath.Join(target, "inbox")); os.IsNotExist(err) {
+		t.Error("inbox/ directory not created")
+	}
+	if _, err := os.Stat(filepath.Join(target, ".bentotask")); os.IsNotExist(err) {
+		t.Error(".bentotask/ directory not created")
+	}
+	if _, err := os.Stat(filepath.Join(target, "_README.md")); os.IsNotExist(err) {
+		t.Error("_README.md not created")
+	}
+}
+
+func TestIntegrationObsidianInitExistingDir(t *testing.T) {
+	target := t.TempDir()
+
+	// Create a pre-existing file
+	existingFile := filepath.Join(target, "existing.md")
+	_ = os.WriteFile(existingFile, []byte("# My notes"), 0o644)
+
+	_, err := executeCmdInDir(t, t.TempDir(), "obsidian", "init", target)
+	if err != nil {
+		t.Fatalf("obsidian init existing dir error: %v", err)
+	}
+
+	// Existing file should not be overwritten
+	data, _ := os.ReadFile(existingFile)
+	if string(data) != "# My notes" {
+		t.Error("existing file was overwritten")
+	}
+
+	// _README.md should still be created
+	if _, err := os.Stat(filepath.Join(target, "_README.md")); os.IsNotExist(err) {
+		t.Error("_README.md not created in existing dir")
+	}
+}
+
+func TestIntegrationObsidianInitJSON(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "vault")
+
+	out, err := executeCmdInDir(t, t.TempDir(), "obsidian", "init", "--json", target)
+	if err != nil {
+		t.Fatalf("obsidian init --json error: %v\noutput: %s", err, out)
+	}
+
+	var result map[string]string
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("JSON parse error: %v\noutput: %s", err, out)
+	}
+
+	if result["path"] != target {
+		t.Errorf("path = %q, want %q", result["path"], target)
+	}
+	if result["message"] != "Obsidian vault initialized" {
+		t.Errorf("message = %q", result["message"])
 	}
 }
