@@ -54,6 +54,7 @@ func resetFlags() {
 		nowCmd, planCmd, planTodayCmd,
 		serveCmd,
 		obsidianCmd, obsidianInitCmd,
+		exportCmd, exportJSONCmd, exportCSVCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -1741,5 +1742,75 @@ func TestIntegrationObsidianInitJSON(t *testing.T) {
 	}
 	if result["message"] != "Obsidian vault initialized" {
 		t.Errorf("message = %q", result["message"])
+	}
+}
+
+// --- bt export integration tests ---
+
+func TestIntegrationExportJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	_, _ = executeCmdInDir(t, dataDir, "add", "Export task 1", "-p", "high")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Export task 2", "-p", "low")
+
+	out, err := executeCmdInDir(t, dataDir, "export", "json")
+	if err != nil {
+		t.Fatalf("export json error: %v\noutput: %s", err, out)
+	}
+
+	var tasks []TaskJSON
+	if err := json.Unmarshal([]byte(out), &tasks); err != nil {
+		t.Fatalf("parse error: %v\noutput: %s", err, out)
+	}
+	if len(tasks) != 2 {
+		t.Errorf("expected 2 tasks, got %d", len(tasks))
+	}
+}
+
+func TestIntegrationExportCSV(t *testing.T) {
+	dataDir := t.TempDir()
+
+	_, _ = executeCmdInDir(t, dataDir, "add", "CSV task", "-p", "medium", "--tag", "work")
+
+	out, err := executeCmdInDir(t, dataDir, "export", "csv")
+	if err != nil {
+		t.Fatalf("export csv error: %v\noutput: %s", err, out)
+	}
+
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if len(lines) < 2 {
+		t.Fatalf("expected header + data rows, got %d lines", len(lines))
+	}
+	if !strings.HasPrefix(lines[0], "id,") {
+		t.Errorf("first line should be header, got: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "CSV task") {
+		t.Errorf("data row should contain task title, got: %s", lines[1])
+	}
+	if !strings.Contains(lines[1], "work") {
+		t.Errorf("data row should contain tag, got: %s", lines[1])
+	}
+}
+
+func TestIntegrationExportFiltered(t *testing.T) {
+	dataDir := t.TempDir()
+
+	_, _ = executeCmdInDir(t, dataDir, "add", "High task", "-p", "high")
+	_, _ = executeCmdInDir(t, dataDir, "add", "Low task", "-p", "low")
+
+	out, err := executeCmdInDir(t, dataDir, "export", "json", "--priority", "high")
+	if err != nil {
+		t.Fatalf("export filtered error: %v\noutput: %s", err, out)
+	}
+
+	var tasks []TaskJSON
+	if err := json.Unmarshal([]byte(out), &tasks); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if len(tasks) != 1 {
+		t.Errorf("expected 1 filtered task, got %d", len(tasks))
+	}
+	if len(tasks) > 0 && tasks[0].Title != "High task" {
+		t.Errorf("expected 'High task', got %q", tasks[0].Title)
 	}
 }
