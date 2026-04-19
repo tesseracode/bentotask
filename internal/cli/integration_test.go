@@ -55,6 +55,7 @@ func resetFlags() {
 		serveCmd,
 		obsidianCmd, obsidianInitCmd,
 		exportCmd, exportJSONCmd, exportCSVCmd,
+		importCmd, importTodoistCmd, importTaskwarriorCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
@@ -1812,5 +1813,129 @@ func TestIntegrationExportFiltered(t *testing.T) {
 	}
 	if len(tasks) > 0 && tasks[0].Title != "High task" {
 		t.Errorf("expected 'High task', got %q", tasks[0].Title)
+	}
+}
+
+// --- bt import integration tests ---
+
+func TestIntegrationImportTodoistCSV(t *testing.T) {
+	dataDir := t.TempDir()
+
+	// Create a sample Todoist CSV
+	csvContent := `TYPE,CONTENT,DESCRIPTION,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+task,Buy groceries,,3,1,,,2026-05-10,,
+section,Shopping,,,,,,,,
+task,Call dentist,,1,1,,,,,
+task,Read book,,4,1,,,,,
+`
+	csvFile := filepath.Join(t.TempDir(), "todoist.csv")
+	_ = os.WriteFile(csvFile, []byte(csvContent), 0o644)
+
+	out, err := executeCmdInDir(t, dataDir, "import", "todoist", csvFile)
+	if err != nil {
+		t.Fatalf("import todoist error: %v\noutput: %s", err, out)
+	}
+
+	if !strings.Contains(out, "3 tasks") {
+		t.Errorf("expected 3 tasks imported, got: %s", out)
+	}
+
+	// Verify tasks exist
+	out, err = executeCmdInDir(t, dataDir, "export", "json")
+	if err != nil {
+		t.Fatalf("export error: %v", err)
+	}
+
+	var tasks []TaskJSON
+	if err := json.Unmarshal([]byte(out), &tasks); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if len(tasks) != 3 {
+		t.Errorf("expected 3 tasks after import, got %d", len(tasks))
+	}
+}
+
+func TestIntegrationImportTodoistPriorityMapping(t *testing.T) {
+	dataDir := t.TempDir()
+
+	csvContent := `TYPE,CONTENT,PRIORITY
+task,Urgent task,1
+task,High task,2
+task,Medium task,3
+task,Low task,4
+`
+	csvFile := filepath.Join(t.TempDir(), "todoist.csv")
+	_ = os.WriteFile(csvFile, []byte(csvContent), 0o644)
+
+	_, _ = executeCmdInDir(t, dataDir, "import", "todoist", csvFile)
+
+	out, err := executeCmdInDir(t, dataDir, "export", "json")
+	if err != nil {
+		t.Fatalf("export error: %v", err)
+	}
+
+	var tasks []TaskJSON
+	_ = json.Unmarshal([]byte(out), &tasks)
+
+	priorities := make(map[string]string)
+	for _, task := range tasks {
+		priorities[task.Title] = task.Priority
+	}
+
+	if priorities["Urgent task"] != "urgent" {
+		t.Errorf("Todoist 1 should map to urgent, got %q", priorities["Urgent task"])
+	}
+	if priorities["High task"] != "high" {
+		t.Errorf("Todoist 2 should map to high, got %q", priorities["High task"])
+	}
+	if priorities["Medium task"] != "medium" {
+		t.Errorf("Todoist 3 should map to medium, got %q", priorities["Medium task"])
+	}
+	if priorities["Low task"] != "low" {
+		t.Errorf("Todoist 4 should map to low, got %q", priorities["Low task"])
+	}
+}
+
+func TestIntegrationImportTaskwarriorJSON(t *testing.T) {
+	dataDir := t.TempDir()
+
+	twJSON := `[
+		{"description": "Fix bug", "priority": "H", "due": "20260515T120000Z", "tags": ["dev"], "project": "work", "status": "pending"},
+		{"description": "Write docs", "priority": "M", "tags": ["writing"], "status": "pending"},
+		{"description": "Old task", "status": "completed"}
+	]`
+	jsonFile := filepath.Join(t.TempDir(), "tw.json")
+	_ = os.WriteFile(jsonFile, []byte(twJSON), 0o644)
+
+	out, err := executeCmdInDir(t, dataDir, "import", "taskwarrior", jsonFile)
+	if err != nil {
+		t.Fatalf("import taskwarrior error: %v\noutput: %s", err, out)
+	}
+
+	if !strings.Contains(out, "3 tasks") {
+		t.Errorf("expected 3 tasks imported, got: %s", out)
+	}
+
+	// Verify a specific task
+	out, err = executeCmdInDir(t, dataDir, "export", "json")
+	if err != nil {
+		t.Fatalf("export error: %v", err)
+	}
+
+	var tasks []TaskJSON
+	_ = json.Unmarshal([]byte(out), &tasks)
+
+	found := false
+	for _, task := range tasks {
+		if task.Title == "Fix bug" {
+			found = true
+			if task.Priority != "high" {
+				t.Errorf("priority should be high, got %q", task.Priority)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Error("Fix bug task not found after import")
 	}
 }
