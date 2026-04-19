@@ -1,46 +1,36 @@
 # Current Handoff
 
 ## Active Task
-- **Task ID**: M7 Integrations (partial)
-- **Milestone**: M7 — Integrations
-- **Description**: Obsidian, Export, Import, Notion
-- **Status**: 4/8 COMPLETE
-- **Assigned**: 2026-04-18
+- **Task ID**: M8 Desktop & Distribution (partial)
+- **Milestone**: M8 — Desktop App & Distribution
+- **Description**: Browser auto-launch, cross-compilation, CI pipeline
+- **Status**: 3/7 COMPLETE
+- **Assigned**: 2026-04-19
 
 ## Last Session Summary
-- **Sessions 1–15**: M0–M6 ALL COMPLETE
-- **Session 16**: M7 partial — Obsidian, Export, Import, Notion
-  - Part 1 (M7.8): Obsidian vault integration — bt obsidian init + wikilink rendering in web UI
-  - Part 2 (M7.5): Export — bt export json, bt export csv with filters and file output
-  - Part 3 (M7.4): Import — bt import todoist (CSV), bt import taskwarrior (JSON)
-  - Part 4 (M7.7): Notion integration — bt notion import with API client + property mapping + mock tests
+- **Sessions 1–16**: M0–M7 (partial) complete
+- **Session 17**: Bug fixes from M7 review + M8.1, M8.6, M8.7
+  - Part 1: Bug fixes — Body field in TaskOptions, Todoist description import,
+    Taskwarrior annotation import, Notion pagination
+  - Part 2 (M8.1): bt serve --open — auto-launches default browser
+  - Part 3 (M8.6): Cross-compilation Makefile — 5 platform targets (darwin/linux/windows)
+  - Part 4 (M8.7): GitHub Actions release pipeline — builds on tag push, creates release
 
 ## Current State
 - **M0–M6 ALL COMPLETE**
-- **M7: 4/8 complete** (M7.4, M7.5, M7.7, M7.8)
-- **Deferred M7 items**: M7.1 (CalDAV), M7.2 (Google Calendar), M7.3 (Notifications), M7.6 (Git sync)
-- Go backend: 325+ tests, 0 lint issues
+- **M7: 4/8 complete** (Import, Export, Notion, Obsidian)
+- **M8: 3/7 complete** (M8.1, M8.6, M8.7)
+- Go backend: 329 tests, 0 lint issues
 - Web UI: 0 svelte-check errors
-- New packages: internal/notion/ (Notion API client + import)
-- New CLI commands: bt obsidian init, bt export json/csv, bt import todoist/taskwarrior, bt notion import
-
-## M7 Status
-
-| Item | Description | Status |
-|------|-------------|--------|
-| M7.1 | CalDAV (Apple/Nextcloud) | ⏳ Deferred |
-| M7.2 | Google Calendar | ⏳ Deferred |
-| M7.3 | Notifications | ⏳ Deferred |
-| M7.4 | Import: Todoist + Taskwarrior | ✅ |
-| M7.5 | Export: JSON + CSV | ✅ |
-| M7.6 | Git-based sync | ⏳ Deferred |
-| M7.7 | Notion integration | ✅ |
-| M7.8 | Obsidian vault integration | ✅ |
+- Single binary: `make build` → `./bt serve --open` launches app
+- Cross-compilation: `make dist` builds 5 platform binaries
+- CI: `.github/workflows/release.yml` — tag push triggers release
 
 ## Next Steps
-- M7.1–M7.3, M7.6: CalDAV, Google Calendar, notifications, git sync (more infrastructure needed)
-- M8: Desktop app & distribution (Wails, cross-compilation, installers)
-- Future: dark/light mode toggle, PWA, drag-and-drop Kanban
+- M8.2–M8.5: Wails desktop app + platform installers (deferred — needs Wails setup)
+- M9: Knowledge Base (notes, links, graph)
+- M10: AI & Extensions (plugins, MCP, NLP)
+- M11: Calendar sync & notifications (deferred from M7)
 
 ## Blockers
 - None

@@ -134,13 +134,13 @@
 ## Milestone 8: Desktop App & Distribution (Phase 6)
 **Goal**: Native desktop app and cross-platform installers.
 
-- [ ] M8.1 — `bt serve --open` auto-launch browser mode
+- [x] M8.1 — `bt serve --open` auto-launch browser mode
 - [ ] M8.2 — Wails native desktop app (Go + native webview, no Electron)
 - [ ] M8.3 — macOS distribution (.app bundle, .dmg installer)
 - [ ] M8.4 — Windows distribution (.exe, installer via Inno Setup/NSIS)
 - [ ] M8.5 — Linux distribution (AppImage, .desktop file, optional Flatpak)
-- [ ] M8.6 — Cross-compilation Makefile targets (darwin/amd64, darwin/arm64, linux/amd64, windows/amd64)
-- [ ] M8.7 — CI release pipeline (GitHub Actions: build all platforms on tag push)
+- [x] M8.6 — Cross-compilation Makefile targets (darwin/amd64, darwin/arm64, linux/amd64, windows/amd64)
+- [x] M8.7 — CI release pipeline (GitHub Actions: build all platforms on tag push)
 
 ---
 
@@ -163,6 +163,17 @@
 - [ ] M10.3 — Natural language task creation
 - [ ] M10.4 — AI-powered scheduling optimization
 - [ ] M10.5 — Smart categorization suggestions
+
+---
+
+## Milestone 11: Calendar Sync & Notifications (Phase 9 — when needed)
+**Goal**: External calendar sync and proactive notifications. Deferred from M7 — requires OAuth infrastructure, calendar servers, and notification daemons.
+
+- [ ] M11.1 — CalDAV client (Apple Calendar, Nextcloud)
+- [ ] M11.2 — Google Calendar API integration (OAuth2 flow)
+- [ ] M11.3 — Notification system (system notifications, webhooks, ntfy.sh)
+- [ ] M11.4 — Git-based sync between devices
+- [ ] M11.5 — iCal (.ics) export
 
 ---
 
