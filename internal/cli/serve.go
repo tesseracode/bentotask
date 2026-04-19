@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 func init() {
 	serveCmd.Flags().Int("port", 7878, "Port to listen on")
 	serveCmd.Flags().String("host", "127.0.0.1", "Host to bind to")
+	serveCmd.Flags().BoolP("open", "o", false, "Open browser automatically")
 	rootCmd.AddCommand(serveCmd)
 }
 
@@ -31,6 +34,7 @@ via a JSON REST API at /api/v1/*.
 
 Examples:
   bt serve                    Start on localhost:7878 (default)
+  bt serve --open             Start and open browser
   bt serve --port 9090        Custom port
   bt serve --host 0.0.0.0     Expose to network`,
 	RunE: runServe,
@@ -61,6 +65,12 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		close(errCh)
 	}()
 
+	// Auto-open browser if requested
+	openBrowser, _ := cmd.Flags().GetBool("open")
+	if openBrowser {
+		go openURL(fmt.Sprintf("http://%s", addr))
+	}
+
 	select {
 	case sig := <-sigCh:
 		log.Printf("Received %v, shutting down...", sig)
@@ -79,4 +89,20 @@ func runServe(cmd *cobra.Command, _ []string) error {
 	}
 
 	return a.Close()
+}
+
+// openURL launches the default browser for the given URL.
+func openURL(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		return
+	}
+	_ = cmd.Start()
 }
