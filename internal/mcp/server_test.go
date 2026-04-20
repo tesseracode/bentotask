@@ -108,8 +108,8 @@ func TestMCPToolsList(t *testing.T) {
 	result, _ := resp["result"].(map[string]any)
 	tools, _ := result["tools"].([]any)
 
-	if len(tools) != 18 {
-		t.Errorf("expected 18 tools, got %d", len(tools))
+	if len(tools) != 20 {
+		t.Errorf("expected 20 tools, got %d", len(tools))
 		for _, tool := range tools {
 			m, _ := tool.(map[string]any)
 			t.Logf("  tool: %s", m["name"])
@@ -323,5 +323,109 @@ func TestMCPNotificationNoResponse(t *testing.T) {
 	// The response should be for ID 2 (tools/list), not the notification
 	if resp["id"] != float64(2) {
 		t.Errorf("response id = %v, want 2 (notification should have been skipped)", resp["id"])
+	}
+}
+
+func TestMCPQuickAdd(t *testing.T) {
+	w, scanner := setupTestMCP(t)
+
+	sendRequest(t, w, 1, "initialize", nil)
+	_ = readResponse(t, scanner)
+
+	sendRequest(t, w, 2, "tools/call", map[string]any{
+		"name":      "quick_add",
+		"arguments": map[string]any{"text": "buy milk tomorrow #errands"},
+	})
+	resp := readResponse(t, scanner)
+
+	result, _ := resp["result"].(map[string]any)
+	content, _ := result["content"].([]any)
+	block, _ := content[0].(map[string]any)
+	text, _ := block["text"].(string)
+
+	if !strings.Contains(text, "buy milk") && !strings.Contains(text, "Buy milk") {
+		t.Errorf("quick_add should contain title: %s", text)
+	}
+	if !strings.Contains(text, "#errands") {
+		t.Errorf("quick_add should contain tag: %s", text)
+	}
+	if !strings.Contains(text, "due ") {
+		t.Errorf("quick_add should contain due date: %s", text)
+	}
+}
+
+func TestMCPResourcesList(t *testing.T) {
+	w, scanner := setupTestMCP(t)
+
+	sendRequest(t, w, 1, "initialize", nil)
+	_ = readResponse(t, scanner)
+
+	sendRequest(t, w, 2, "resources/list", nil)
+	resp := readResponse(t, scanner)
+
+	result, _ := resp["result"].(map[string]any)
+	resources, _ := result["resources"].([]any)
+
+	if len(resources) != 5 {
+		t.Errorf("expected 5 resources, got %d", len(resources))
+	}
+}
+
+func TestMCPResourceRead(t *testing.T) {
+	w, scanner := setupTestMCP(t)
+
+	sendRequest(t, w, 1, "initialize", nil)
+	_ = readResponse(t, scanner)
+
+	sendRequest(t, w, 2, "resources/read", map[string]any{"uri": "bentotask://meta/summary"})
+	resp := readResponse(t, scanner)
+
+	result, _ := resp["result"].(map[string]any)
+	contents, _ := result["contents"].([]any)
+	if len(contents) == 0 {
+		t.Fatal("no contents in response")
+	}
+	block, _ := contents[0].(map[string]any)
+	text, _ := block["text"].(string)
+
+	if !strings.Contains(text, "BentoTask Summary") {
+		t.Errorf("summary should contain header: %s", text)
+	}
+}
+
+func TestMCPPromptsList(t *testing.T) {
+	w, scanner := setupTestMCP(t)
+
+	sendRequest(t, w, 1, "initialize", nil)
+	_ = readResponse(t, scanner)
+
+	sendRequest(t, w, 2, "prompts/list", nil)
+	resp := readResponse(t, scanner)
+
+	result, _ := resp["result"].(map[string]any)
+	prompts, _ := result["prompts"].([]any)
+
+	if len(prompts) != 4 {
+		t.Errorf("expected 4 prompts, got %d", len(prompts))
+	}
+}
+
+func TestMCPPromptGet(t *testing.T) {
+	w, scanner := setupTestMCP(t)
+
+	sendRequest(t, w, 1, "initialize", nil)
+	_ = readResponse(t, scanner)
+
+	sendRequest(t, w, 2, "prompts/get", map[string]any{"name": "daily-review"})
+	resp := readResponse(t, scanner)
+
+	result, _ := resp["result"].(map[string]any)
+	messages, _ := result["messages"].([]any)
+	if len(messages) == 0 {
+		t.Fatal("no messages in prompt response")
+	}
+	msg, _ := messages[0].(map[string]any)
+	if msg["role"] != "user" {
+		t.Errorf("role = %v, want 'user'", msg["role"])
 	}
 }

@@ -3,9 +3,11 @@ package mcp
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/tesserabox/bentotask/internal/app"
 	"github.com/tesserabox/bentotask/internal/model"
+	"github.com/tesserabox/bentotask/internal/nlp"
 	"github.com/tesserabox/bentotask/internal/store"
 )
 
@@ -16,6 +18,7 @@ func (s *Server) registerTools() {
 	s.registerLinkTools()
 	s.registerSchedulingTools()
 	s.registerMetaTools()
+	s.registerNLPTools()
 }
 
 func (s *Server) registerTaskTools() {
@@ -607,6 +610,100 @@ func (s *Server) registerMetaTools() {
 				return "No tags in use.", nil
 			}
 			return fmt.Sprintf("Tags: %s", strings.Join(tags, ", ")), nil
+		},
+	})
+}
+
+func (s *Server) registerNLPTools() {
+	s.register(Tool{
+		Name:        "parse_natural",
+		Description: "Parse natural language into a structured task. Returns extracted fields without creating the task — use add_task to create it.",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"text": map[string]any{"type": "string", "description": "Natural language task description"},
+			},
+			"required": []string{"text"},
+		},
+		handler: func(params map[string]any) (string, error) {
+			text := getString(params, "text")
+			if text == "" {
+				return "", fmt.Errorf("text is required")
+			}
+			parsed := nlp.Parse(text, time.Now())
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "Parsed task:\n")
+			fmt.Fprintf(&sb, "  Title: %s\n", parsed.Title)
+			if parsed.Priority != "" {
+				fmt.Fprintf(&sb, "  Priority: %s\n", parsed.Priority)
+			}
+			if parsed.Energy != "" {
+				fmt.Fprintf(&sb, "  Energy: %s\n", parsed.Energy)
+			}
+			if parsed.DueDate != "" {
+				fmt.Fprintf(&sb, "  Due: %s\n", parsed.DueDate)
+			}
+			if parsed.Duration > 0 {
+				fmt.Fprintf(&sb, "  Duration: %dm\n", parsed.Duration)
+			}
+			if len(parsed.Tags) > 0 {
+				fmt.Fprintf(&sb, "  Tags: %s\n", strings.Join(parsed.Tags, ", "))
+			}
+			if parsed.Context != "" {
+				fmt.Fprintf(&sb, "  Context: %s\n", parsed.Context)
+			}
+			return sb.String(), nil
+		},
+	})
+
+	s.register(Tool{
+		Name:        "quick_add",
+		Description: "Parse natural language and create a task in one step. Extracts dates, priority, tags, duration from the text.",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"text": map[string]any{"type": "string", "description": "Natural language task description (e.g., 'buy groceries tomorrow #errands')"},
+			},
+			"required": []string{"text"},
+		},
+		handler: func(params map[string]any) (string, error) {
+			text := getString(params, "text")
+			if text == "" {
+				return "", fmt.Errorf("text is required")
+			}
+			parsed := nlp.Parse(text, time.Now())
+			if parsed.Title == "" {
+				return "", fmt.Errorf("could not extract a task title from: %q", text)
+			}
+			opts := app.TaskOptions{
+				Priority: model.Priority(parsed.Priority),
+				Energy:   model.Energy(parsed.Energy),
+				DueDate:  parsed.DueDate,
+				Duration: parsed.Duration,
+				Tags:     parsed.Tags,
+			}
+			if parsed.Context != "" {
+				opts.Context = []string{parsed.Context}
+			}
+			task, err := s.app.AddTask(parsed.Title, opts)
+			if err != nil {
+				return "", fmt.Errorf("create task: %w", err)
+			}
+			result := fmt.Sprintf("Created: '%s' (ID: %s", task.Title, task.ShortID(8))
+			if parsed.Priority != "" {
+				result += ", " + parsed.Priority
+			}
+			if parsed.DueDate != "" {
+				result += ", due " + parsed.DueDate
+			}
+			if parsed.Duration > 0 {
+				result += fmt.Sprintf(", %dm", parsed.Duration)
+			}
+			if len(parsed.Tags) > 0 {
+				result += ", #" + strings.Join(parsed.Tags, " #")
+			}
+			result += ")"
+			return result, nil
 		},
 	})
 }
