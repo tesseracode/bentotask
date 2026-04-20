@@ -159,7 +159,7 @@
 **Goal**: Plugin system, MCP, AI features.
 
 - [ ] M10.1 — Plugin/extension architecture (Wasm via wazero)
-- [ ] M10.2 — MCP server implementation
+- [x] M10.2 — MCP server implementation
 - [ ] M10.3 — Natural language task creation
 - [ ] M10.4 — AI-powered scheduling optimization
 - [ ] M10.5 — Smart categorization suggestions
