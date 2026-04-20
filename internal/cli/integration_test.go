@@ -57,6 +57,7 @@ func resetFlags() {
 		exportCmd, exportJSONCmd, exportCSVCmd,
 		importCmd, importTodoistCmd, importTaskwarriorCmd,
 		notionCmd, notionImportCmd,
+		mcpCmd,
 	}
 	for _, cmd := range allCmds {
 		cmd.Flags().VisitAll(resetFlag)
