@@ -550,8 +550,9 @@ func (a *App) AddHabit(title string, opts HabitOptions) (*model.Task, error) {
 		Created: now,
 		Updated: now,
 		Frequency: &model.HabitFrequency{
-			Type:   opts.FreqType,
-			Target: opts.FreqTarget,
+			Type:         opts.FreqType,
+			Target:       opts.FreqTarget,
+			MaxPerPeriod: opts.MaxPerPeriod,
 		},
 		Recurrence: opts.Recurrence,
 	}
@@ -598,6 +599,37 @@ func (a *App) LogHabit(idOrPrefix string, duration int, note string) (*model.Tas
 	}
 
 	now := time.Now().UTC()
+
+	// Check max_per_period limit
+	if task.Frequency != nil && task.Frequency.MaxPerPeriod > 0 {
+		completions := habit.ParseCompletionsFromBody(task.Body)
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+
+		count := 0
+		switch task.Frequency.Type {
+		case "daily":
+			for _, c := range completions {
+				cDay := time.Date(c.CompletedAt.Year(), c.CompletedAt.Month(), c.CompletedAt.Day(), 0, 0, 0, 0, time.UTC)
+				if cDay.Equal(today) {
+					count++
+				}
+			}
+		case "weekly":
+			_, thisWeek := now.ISOWeek()
+			thisYear := now.Year()
+			for _, c := range completions {
+				cYear, cWeek := c.CompletedAt.ISOWeek()
+				if cYear == thisYear && cWeek == thisWeek {
+					count++
+				}
+			}
+		}
+
+		if count >= task.Frequency.MaxPerPeriod {
+			return nil, fmt.Errorf("habit %q has reached its limit of %d completions per %s period",
+				task.Title, task.Frequency.MaxPerPeriod, task.Frequency.Type)
+		}
+	}
 
 	// Append to markdown body
 	c := habit.Completion{
@@ -683,13 +715,14 @@ func (a *App) ListHabits() ([]*store.IndexedTask, error) {
 
 // HabitOptions holds options for creating a new habit.
 type HabitOptions struct {
-	FreqType   string // "daily" or "weekly"
-	FreqTarget int    // how many times per period
-	Recurrence string // RRULE string
-	Priority   model.Priority
-	Energy     model.Energy
-	Tags       []string
-	Context    []string
+	FreqType     string // "daily" or "weekly"
+	FreqTarget   int    // how many times per period
+	MaxPerPeriod int    // 0 = unlimited
+	Recurrence   string // RRULE string
+	Priority     model.Priority
+	Energy       model.Energy
+	Tags         []string
+	Context      []string
 }
 
 // --- Shell Completions ---

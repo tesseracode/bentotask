@@ -234,7 +234,7 @@
 						{/if}
 					</div>
 					<div class="habit-actions">
-						<button class="log-btn" class:log-done={done} onclick={() => logHabit(habit.id)} title={done ? 'Already logged today' : 'Log completion'}>
+						<button class="log-btn" class:log-done={done} onclick={() => logHabit(habit.id)} disabled={done} title={done ? 'Already completed for this period' : 'Log completion'}>
 							{done ? '✓' : 'Log'}
 						</button>
 						{#if editingId !== habit.id}

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 
 	"github.com/tesserabox/bentotask/internal/app"
 )
@@ -194,6 +195,10 @@ func (s *Server) handleToolsList(req jsonRPCRequest) jsonRPCResponse {
 		})
 	}
 
+	sort.Slice(toolList, func(i, j int) bool {
+		return toolList[i]["name"].(string) < toolList[j]["name"].(string)
+	})
+
 	return jsonRPCResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
@@ -278,6 +283,9 @@ func (s *Server) handleResourcesList(req jsonRPCRequest) jsonRPCResponse {
 			"mimeType":    r.MimeType,
 		})
 	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i]["uri"].(string) < list[j]["uri"].(string)
+	})
 	return jsonRPCResponse{JSONRPC: "2.0", ID: req.ID, Result: map[string]any{"resources": list}}
 }
 
@@ -308,6 +316,9 @@ func (s *Server) handlePromptsList(req jsonRPCRequest) jsonRPCResponse {
 			"arguments":   p.Arguments,
 		})
 	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i]["name"].(string) < list[j]["name"].(string)
+	})
 	return jsonRPCResponse{JSONRPC: "2.0", ID: req.ID, Result: map[string]any{"prompts": list}}
 }
 

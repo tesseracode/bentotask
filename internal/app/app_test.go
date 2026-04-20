@@ -854,3 +854,47 @@ func TestHasCycleDisconnected(t *testing.T) {
 		t.Error("disconnected graph should not have cycle from A")
 	}
 }
+
+func TestLogHabitMaxPerPeriod(t *testing.T) {
+	a := openTestApp(t)
+
+	h, err := a.AddHabit("Meditate", HabitOptions{
+		FreqType: "daily", FreqTarget: 1, MaxPerPeriod: 1,
+		Recurrence: "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("add habit: %v", err)
+	}
+
+	// First log should succeed
+	_, err = a.LogHabit(h.ID, 10, "")
+	if err != nil {
+		t.Fatalf("first log error: %v", err)
+	}
+
+	// Second log should fail
+	_, err = a.LogHabit(h.ID, 10, "")
+	if err == nil {
+		t.Error("second log should fail with max_per_period=1")
+	}
+}
+
+func TestLogHabitUnlimited(t *testing.T) {
+	a := openTestApp(t)
+
+	h, err := a.AddHabit("Drink water", HabitOptions{
+		FreqType: "daily", FreqTarget: 8, MaxPerPeriod: 0,
+		Recurrence: "FREQ=DAILY",
+	})
+	if err != nil {
+		t.Fatalf("add habit: %v", err)
+	}
+
+	// Multiple logs should all succeed
+	for i := 0; i < 3; i++ {
+		_, err := a.LogHabit(h.ID, 0, "")
+		if err != nil {
+			t.Fatalf("log %d error: %v", i+1, err)
+		}
+	}
+}

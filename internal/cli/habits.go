@@ -21,6 +21,7 @@ func init() {
 	// bt habit add flags
 	habitAddCmd.Flags().String("freq", "daily", "Frequency type: daily, weekly")
 	habitAddCmd.Flags().Int("target", 1, "Target completions per period")
+	habitAddCmd.Flags().Int("max", 0, "Maximum completions per period (0 = unlimited)")
 	habitAddCmd.Flags().String("rrule", "", "RRULE string (auto-generated from --freq if omitted)")
 	habitAddCmd.Flags().StringP("priority", "p", "", "Priority: none, low, medium, high, urgent")
 	habitAddCmd.Flags().StringP("energy", "e", "", "Energy: low, medium, high")
@@ -92,6 +93,7 @@ Examples:
 
 		opts.FreqType, _ = cmd.Flags().GetString("freq")
 		opts.FreqTarget, _ = cmd.Flags().GetInt("target")
+		opts.MaxPerPeriod, _ = cmd.Flags().GetInt("max")
 
 		// Auto-generate RRULE from frequency if not explicitly provided
 		opts.Recurrence, _ = cmd.Flags().GetString("rrule")

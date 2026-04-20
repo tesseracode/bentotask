@@ -12,14 +12,15 @@ import (
 
 // createHabitRequest is the JSON body for POST /habits.
 type createHabitRequest struct {
-	Title      string   `json:"title"`
-	FreqType   string   `json:"freq_type"`
-	FreqTarget int      `json:"freq_target"`
-	Recurrence string   `json:"recurrence,omitempty"`
-	Priority   string   `json:"priority,omitempty"`
-	Energy     string   `json:"energy,omitempty"`
-	Tags       []string `json:"tags,omitempty"`
-	Contexts   []string `json:"contexts,omitempty"`
+	Title        string   `json:"title"`
+	FreqType     string   `json:"freq_type"`
+	FreqTarget   int      `json:"freq_target"`
+	MaxPerPeriod int      `json:"max_per_period,omitempty"`
+	Recurrence   string   `json:"recurrence,omitempty"`
+	Priority     string   `json:"priority,omitempty"`
+	Energy       string   `json:"energy,omitempty"`
+	Tags         []string `json:"tags,omitempty"`
+	Contexts     []string `json:"contexts,omitempty"`
 }
 
 // logHabitRequest is the JSON body for POST /habits/:id/log.
@@ -41,13 +42,14 @@ func (s *Server) handleCreateHabit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opts := app.HabitOptions{
-		FreqType:   req.FreqType,
-		FreqTarget: req.FreqTarget,
-		Recurrence: req.Recurrence,
-		Priority:   model.Priority(req.Priority),
-		Energy:     model.Energy(req.Energy),
-		Tags:       req.Tags,
-		Context:    req.Contexts,
+		FreqType:     req.FreqType,
+		FreqTarget:   req.FreqTarget,
+		MaxPerPeriod: req.MaxPerPeriod,
+		Recurrence:   req.Recurrence,
+		Priority:     model.Priority(req.Priority),
+		Energy:       model.Energy(req.Energy),
+		Tags:         req.Tags,
+		Context:      req.Contexts,
 	}
 	if opts.FreqType == "" {
 		opts.FreqType = "daily"

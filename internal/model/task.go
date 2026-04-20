@@ -87,8 +87,9 @@ const (
 
 // HabitFrequency defines how often a habit should be performed.
 type HabitFrequency struct {
-	Type   string `yaml:"type"`   // "daily" or "weekly"
-	Target int    `yaml:"target"` // How many times per period (e.g., 3 times per week)
+	Type         string `yaml:"type"                      json:"type"`
+	Target       int    `yaml:"target"                    json:"target"`
+	MaxPerPeriod int    `yaml:"max_per_period,omitempty"  json:"max_per_period,omitempty"` // 0 = unlimited
 }
 
 // RoutineStep is one step in a routine's ordered sequence.

@@ -274,11 +274,12 @@ func (s *Server) registerHabitTools() {
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"title":       map[string]any{"type": "string", "description": "Habit name"},
-				"freq_type":   map[string]any{"type": "string", "enum": []string{"daily", "weekly"}, "description": "Frequency type"},
-				"freq_target": map[string]any{"type": "integer", "description": "Target completions per period"},
-				"priority":    map[string]any{"type": "string", "enum": []string{"urgent", "high", "medium", "low"}},
-				"energy":      map[string]any{"type": "string", "enum": []string{"low", "medium", "high"}},
+				"title":          map[string]any{"type": "string", "description": "Habit name"},
+				"freq_type":      map[string]any{"type": "string", "enum": []string{"daily", "weekly"}, "description": "Frequency type"},
+				"freq_target":    map[string]any{"type": "integer", "description": "Target completions per period"},
+				"max_per_period": map[string]any{"type": "integer", "description": "Max completions per period (0 = unlimited)"},
+				"priority":       map[string]any{"type": "string", "enum": []string{"urgent", "high", "medium", "low"}},
+				"energy":         map[string]any{"type": "string", "enum": []string{"low", "medium", "high"}},
 			},
 			"required": []string{"title"},
 		},
@@ -297,11 +298,12 @@ func (s *Server) registerHabitTools() {
 				recurrence = "FREQ=WEEKLY"
 			}
 			opts := app.HabitOptions{
-				FreqType:   freqType,
-				FreqTarget: freqTarget,
-				Recurrence: recurrence,
-				Priority:   model.Priority(getString(params, "priority")),
-				Energy:     model.Energy(getString(params, "energy")),
+				FreqType:     freqType,
+				FreqTarget:   freqTarget,
+				MaxPerPeriod: getInt(params, "max_per_period"),
+				Recurrence:   recurrence,
+				Priority:     model.Priority(getString(params, "priority")),
+				Energy:       model.Energy(getString(params, "energy")),
 			}
 			task, err := s.app.AddHabit(title, opts)
 			if err != nil {
