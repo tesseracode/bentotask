@@ -160,9 +160,11 @@
 
 - [ ] M10.1 — Plugin/extension architecture (Wasm via wazero)
 - [x] M10.2 — MCP server implementation
-- [ ] M10.3 — Natural language task creation
+- [x] M10.3 — Natural language task creation
 - [ ] M10.4 — AI-powered scheduling optimization
 - [ ] M10.5 — Smart categorization suggestions
+- [x] M10.6 — MCP resources (read-only data: pending tasks, today's plan, habit streaks)
+- [x] M10.7 — MCP prompts (templates: daily review, weekly planning, inbox triage)
 
 ---
 
