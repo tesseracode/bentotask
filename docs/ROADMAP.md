@@ -118,16 +118,14 @@
 ---
 
 ## Milestone 7: Integrations (Phase 5)
-**Goal**: Calendar sync, reminders, import/export, Notion & Obsidian.
+**Goal**: Import/export, Notion & Obsidian.
 
-- [ ] M7.1 — CalDAV client (Apple Calendar, Nextcloud)
-- [ ] M7.2 — Google Calendar API integration
-- [ ] M7.3 — Notification system (system notifications, webhooks)
 - [x] M7.4 — Import: Todoist, Taskwarrior
 - [x] M7.5 — Export: JSON, CSV
-- [ ] M7.6 — Git-based sync between devices
 - [x] M7.7 — Notion integration (import databases as tasks, export tasks to Notion)
 - [x] M7.8 — Obsidian vault integration (shared data dir, wikilink support, .obsidian compat)
+
+> M7.1 (CalDAV), M7.2 (Google Calendar), M7.3 (Notifications), M7.6 (Git sync) deferred to M11.
 
 ---
 

@@ -1,6 +1,13 @@
 name: Release
 
 on:
+  # Manual trigger from GitHub UI (Actions tab → Run workflow)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+  # Auto trigger on version tags
   push:
     tags:
       - 'v*'

@@ -4,15 +4,149 @@
 
 ---
 
-## [2026-04-07] Review: Bug Fix — TaskJSON missing routine steps/schedule
+## [2026-04-21] Review: Fix Issues — max_per_period, MCP sort, ROADMAP text
 
-**Reviewed by**: Supervisor Agent
-**Commit**: `af30a5e` — Fix TaskJSON missing routine steps/schedule in --json output
-**Handoff claimed**: Bug found during M4 Group A review — steps and schedule silently dropped from JSON
+**Commit**: `c6c33d7`
+**Verdict**: APPROVED ✅
+- Habit `max_per_period` field added across full stack (model → app → CLI → API → MCP → web UI)
+- MCP `tools/list`, `resources/list`, `prompts/list` sorted deterministically
+- ROADMAP M7.5 text corrected (removed iCal, deferred to M11.5)
+- 356 tests, 0 lint
 
-**Verification**:
-- [x] `go build ./...` — compiles cleanly
-- [x] `go vet ./...` — 0 issues
+---
+
+## [2026-04-21] Review: M10.3 + M10.6 + M10.7 — Complete AI Story
+
+**Commits**: `126945f`, `19b3d3a`
+**Verdict**: APPROVED ✅
+- 5 MCP resources (pending tasks, today suggestions, habit status, plan, summary)
+- 4 MCP prompts (daily-review, inbox-triage, weekly-plan, habit-check) — all load real data
+- NLP parser: rule-based, 12 tests, handles dates/priority/energy/duration/tags/context
+- `parse_natural` + `quick_add` MCP tools (20 total)
+- 354 tests, 0 lint
+
+---
+
+## [2026-04-20] Review: M10.2 — MCP Server
+
+**Commits**: `c138667`, `cc3d76c`
+**Verdict**: APPROVED ✅
+- JSON-RPC 2.0 over stdio, 18 tools with schemas, notification handling correct
+- `RunWithIO` pattern for testable stdio, 7 tests
+- `bt mcp` CLI command with Claude Desktop config in help text
+- 336 tests, 0 lint
+
+---
+
+## [2026-04-10] Review: M8.1 + M8.6 + M8.7 — Desktop & Distribution
+
+**Commits**: `4282fcd`, `3c5f830`, `b7ebe3f`
+**Verdict**: APPROVED ✅
+- `bt serve --open` with OS detection (darwin/linux/windows)
+- Cross-compilation Makefile (5 platforms), dist/ gitignored
+- GitHub Actions release pipeline (tag push → build all → release)
+- 329 tests, 0 lint
+
+---
+
+## [2026-04-10] Review: M7 Bug Fixes — Body, descriptions, Notion pagination
+
+**Commit**: `2177d18`
+**Verdict**: APPROVED ✅
+- `Body` field added to `TaskOptions`, plumbed through `AddTask`
+- Todoist DESCRIPTION and Taskwarrior annotations now imported as body
+- Notion `QueryDatabase` handles pagination (`has_more`/`next_cursor`)
+- 329 tests, 0 lint
+
+---
+
+## [2026-04-10] Review: M7 Integrations — Obsidian, Export, Import, Notion
+
+**Commits**: `2624c87`, `4a218b2`, `d939e63`, `55be486`
+**Verdict**: APPROVED ✅
+- `bt obsidian init` + wikilink rendering in web UI
+- `bt export json/csv` with filters, `bt import todoist/taskwarrior`
+- Notion API client with mock-based tests, property mapping
+- 327 tests, 0 lint
+- Issues noted: Notion pagination (fixed later), Todoist descriptions (fixed later), ROADMAP text (fixed later)
+
+---
+
+## [2026-04-09] Review: M6 Completion — Routine Editing + Calendar + Kanban
+
+**Commits**: `62061b8`, `a10b8ac`, `a33cf30`
+**Verdict**: APPROVED ✅
+- Routine CRUD from web UI, step builder, tooltips, keyboard shortcuts
+- Mirror parallel habit stats loading
+- Calendar (monthly grid, task pills, navigation) + Kanban (status columns, dropdowns)
+- M6 12/12 complete
+- 315 tests, 0 lint
+
+---
+
+## [2026-04-09] Review: M6 Group D — Ship It (go:embed + Mirror + Routine Player)
+
+**Commits**: `adca56a`, `0539166`, `5dab0ef`
+**Verdict**: APPROVED ✅
+- SvelteKit → adapter-static → go:embed → single 18MB binary
+- Smart mirror: auto-refreshing, own layout, high contrast
+- Routine player: step-through, timers, progress bars, keyboard shortcuts
+- SPA fallback verified on all routes
+
+---
+
+## [2026-04-09] Review: Bento Alt Theme + JSON Tag Fixes
+
+**Commits**: `a808cc8`, `d2d90ea`, `ea2ea5e`
+**Verdict**: APPROVED ✅
+- JSON tags on RoutineStep, RoutineSchedule, Weights
+- Bento Alt theme applied to all production views via CSS custom properties
+- `--text-on-accent` variable, `completed_today` API field
+- 0 hardcoded hex colors in production styles
+
+---
+
+## [2026-04-09] Review: M6 Group B — Core Views Enhancement
+
+**Commits**: `bd23b37`, `ccac912`, `c8dac0a`, `04d8e62`, `0e0ee18`
+**Verdict**: APPROVED ✅
+- Inbox: filters, sort, accordion expand, inline edit
+- Today: parameter controls, score breakdown, plan scores
+- Habits: streak stats, expanded creation, edit/delete
+- Bug fix: habit.Stats JSON tags (snake_case)
+
+---
+
+## [2026-04-09] Review: M6 Group A — REST API Foundation
+
+**Commits**: `01980eb`, `9612a84`, `2975189`, `7e8da11`
+**Verdict**: APPROVED ✅
+- JSON types moved from cli/ to api/types.go (CLI uses type aliases)
+- 22-endpoint chi API server with CORS, recovery, logging, sync.RWMutex
+- `bt serve` command, 16 httptest-based API tests
+- ADR-004 approved
+
+---
+
+## [2026-04-08] Review: M5 — Smart Scheduling
+
+**Commits**: `4dd420e`, `c98b75b`, `055fe90`
+**Verdict**: APPROVED WITH NOTES ✅
+- Scoring engine (6 factors, matches SPEC §6.1–6.3 exactly)
+- Bento Packing Algorithm (filter → score → greedy knapsack → FFD)
+- `bt now` + `bt plan today` CLI commands
+- Benchmarks: ScoreTask 282ns/0allocs, Pack(100) 32µs
+- Issues: 24 lint, blocks link bug, dead code, age_boost precision (all fixed in follow-up)
+
+---
+
+## [2026-04-07] Review: M4 Group B — Task Linking
+
+**Commits**: `bbb5db0`, `75ce407`, `c155971`
+**Verdict**: APPROVED ✅
+- depends-on/blocks/related-to link types, DFS cycle detection
+- `bt link/unlink` commands, links in `bt task show`
+- Link type validation added, lint fix, flaky recurrence test fixed
 - [x] `golangci-lint run ./...` — 0 issues
 - [x] `go test ./...` — 185 tests PASS
 - [x] Smoke: `bt routine create --json` — steps array with title, duration, optional now present ✅
