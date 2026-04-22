@@ -18,10 +18,10 @@ jobs:
           go-version-file: go.mod
 
       - name: Build
-        run: make build
+        run: make build-go
 
       - name: Test
-        run: make test
+        run: go test ./... -count=1
 
   lint:
     name: Lint
@@ -37,3 +37,22 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.11
+
+  web:
+    name: Web Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: cd web && npm ci
+
+      - name: Type check
+        run: cd web && npx svelte-check --tsconfig ./tsconfig.json
+
+      - name: Build
+        run: cd web && npm run build
